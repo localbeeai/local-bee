@@ -68,7 +68,7 @@ const orderSchema = new mongoose.Schema({
   preferredDeliveryTime: Date,
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'preparing', 'ready-for-pickup', 'out-for-delivery', 'delivered', 'cancelled'],
+    enum: ['pending', 'confirmed', 'preparing', 'ready-for-pickup', 'out-for-delivery', 'delivered', 'cancelled', 'returned'],
     default: 'pending'
   },
   paymentStatus: {
@@ -92,8 +92,25 @@ const orderSchema = new mongoose.Schema({
       type: Date,
       default: Date.now
     },
-    note: String
+    note: String,
+    updatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    location: String
   }],
+  tracking: {
+    trackingNumber: String,
+    carrier: String,
+    trackingUrl: String,
+    estimatedDelivery: Date,
+    actualDelivery: Date,
+    deliveryAttempts: [{
+      date: Date,
+      status: String,
+      note: String
+    }]
+  },
   estimatedDelivery: Date,
   actualDelivery: Date,
   rating: {

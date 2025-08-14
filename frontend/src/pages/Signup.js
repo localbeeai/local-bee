@@ -93,6 +93,40 @@ const FormGroup = styled.div`
     min-height: 100px;
     resize: vertical;
   }
+
+  .password-input-container {
+    position: relative;
+    
+    input {
+      padding-right: 2.5rem;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-light);
+      font-size: 1rem;
+
+      &:hover {
+        color: var(--text-dark);
+      }
+    }
+  }
+
+  .password-requirements {
+    margin-top: 0.5rem;
+    
+    small {
+      color: var(--text-light);
+      font-size: 0.75rem;
+      line-height: 1.4;
+    }
+  }
 `;
 
 const FormRow = styled.div`
@@ -170,6 +204,8 @@ const Signup = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const { signup } = useAuth();
   const navigate = useNavigate();
@@ -201,9 +237,40 @@ const Signup = () => {
     });
   };
 
+  const validatePassword = (password) => {
+    const minLength = 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    if (password.length < minLength) {
+      return 'Password must be at least 8 characters long';
+    }
+    if (!hasUpperCase) {
+      return 'Password must contain at least one uppercase letter';
+    }
+    if (!hasLowerCase) {
+      return 'Password must contain at least one lowercase letter';
+    }
+    if (!hasNumbers) {
+      return 'Password must contain at least one number';
+    }
+    if (!hasSpecialChar) {
+      return 'Password must contain at least one special character (!@#$%^&*(),.?":{}|<>)';
+    }
+    return null;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    const passwordError = validatePassword(formData.password);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
@@ -215,8 +282,8 @@ const Signup = () => {
       return;
     }
 
-    if (formData.role === 'merchant' && (!formData.businessName || !formData.phone)) {
-      setError('Business name and phone number are required for merchants');
+    if (formData.role === 'merchant' && (!formData.businessName || !formData.phone || !formData.businessDescription)) {
+      setError('Business name, phone number, and business description are required for merchants');
       return;
     }
 
@@ -306,29 +373,52 @@ const Signup = () => {
           <FormRow>
             <FormGroup>
               <label htmlFor="password">Password</label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                placeholder="Create password"
-                minLength="6"
-              />
+              <div className="password-input-container">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  placeholder="Create password"
+                  minLength="8"
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? "👁️" : "🙈"}
+                </button>
+              </div>
+              <div className="password-requirements">
+                <small>
+                  Password must contain: 8+ characters, uppercase & lowercase letters, numbers, and special characters
+                </small>
+              </div>
             </FormGroup>
 
             <FormGroup>
               <label htmlFor="confirmPassword">Confirm Password</label>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-                placeholder="Confirm password"
-              />
+              <div className="password-input-container">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  required
+                  placeholder="Confirm password"
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? "👁️" : "🙈"}
+                </button>
+              </div>
             </FormGroup>
           </FormRow>
 
@@ -361,15 +451,41 @@ const Signup = () => {
               </FormGroup>
 
               <FormGroup>
-                <label htmlFor="businessDescription">Business Description (Optional)</label>
+                <label htmlFor="businessDescription">Business Description</label>
                 <textarea
                   id="businessDescription"
                   name="businessDescription"
                   value={formData.businessDescription}
                   onChange={handleChange}
+                  required
                   placeholder="Tell customers about your business..."
                 />
               </FormGroup>
+
+              <div style={{ 
+                background: 'var(--secondary-green)', 
+                padding: '1rem', 
+                borderRadius: '0.5rem', 
+                border: '1px solid var(--primary-green-light)',
+                margin: '1rem 0'
+              }}>
+                <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-dark)' }}>
+                  📦 Shipping Commitment
+                </h4>
+                <p style={{ margin: '0', fontSize: '0.875rem', lineHeight: '1.4', color: 'var(--text-dark)' }}>
+                  As a LocalMarket merchant, you commit to:
+                </p>
+                <ul style={{ margin: '0.5rem 0', paddingLeft: '1.5rem', fontSize: '0.875rem', color: 'var(--text-dark)' }}>
+                  <li>Ship orders within 2-3 business days</li>
+                  <li>Provide accurate delivery estimates</li>
+                  <li>Package items securely to prevent damage</li>
+                  <li>Communicate promptly about any delays</li>
+                  <li>Honor your stated return/exchange policies</li>
+                </ul>
+                <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.75rem', color: 'var(--text-light)' }}>
+                  By registering as a merchant, you agree to these shipping standards.
+                </p>
+              </div>
             </>
           )}
 

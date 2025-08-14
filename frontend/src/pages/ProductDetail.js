@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
+import { useCart } from '../context/CartContext';
+import ContactSellerModal from '../components/ContactSellerModal';
+import axios from '../config/api';
+import { getImageUrl } from '../utils/imageUrl';
 import styled from 'styled-components';
 
 const Container = styled.div`
@@ -144,8 +147,8 @@ const ProductInfo = styled.div`
 
   .stock-info {
     padding: 1rem;
-    background: ${props => props.inStock ? 'var(--secondary-green)' : '#fee2e2'};
-    color: ${props => props.inStock ? 'var(--primary-green)' : '#dc2626'};
+    background: ${props => props.$inStock ? 'var(--secondary-green)' : '#fee2e2'};
+    color: ${props => props.$inStock ? 'var(--primary-green)' : '#dc2626'};
     border-radius: 0.5rem;
     font-weight: 600;
     text-align: center;
@@ -277,13 +280,21 @@ const MerchantCard = styled.div`
       width: 60px;
       height: 60px;
       border-radius: 50%;
-      background: var(--primary-green-light);
+      background: var(--natural-beige);
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 1.5rem;
       font-weight: 700;
-      color: white;
+      color: var(--text-dark);
+      overflow: hidden;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+      }
     }
 
     .merchant-info {
@@ -400,14 +411,17 @@ const ErrorState = styled.div`
 const ProductDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
+  const { addToCart, isInCart, getCartItem } = useCart();
   const navigate = useNavigate();
   
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [contactModalOpen, setContactModalOpen] = useState(false);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     fetchProduct();
   }, [id]);
 
@@ -440,13 +454,46 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = () => {
-    // TODO: Implement cart functionality
-    alert('Cart functionality coming soon!');
+    if (!user) {
+      navigate('/login', { state: { from: { pathname: `/products/${id}` } } });
+      return;
+    }
+
+    if (product.inventory.quantity === 0) {
+      return;
+    }
+
+    addToCart(product, 1);
+    
+    // Show a brief confirmation
+    const button = document.querySelector('.primary');
+    const originalText = button.textContent;
+    button.textContent = 'Added to Cart!';
+    button.style.background = 'var(--primary-green)';
+    
+    setTimeout(() => {
+      if (isInCart(product._id)) {
+        const cartItem = getCartItem(product._id);
+        button.textContent = `In Cart (${cartItem.quantity})`;
+      } else {
+        button.textContent = originalText;
+      }
+    }, 2000);
   };
 
   const handleContactMerchant = () => {
-    // TODO: Implement messaging functionality
-    alert('Messaging functionality coming soon!');
+    if (!user) {
+      alert('Please log in to contact the seller');
+      navigate('/login');
+      return;
+    }
+
+    if (user.role === 'merchant' && product.merchant._id === user.id) {
+      alert('You cannot message yourself');
+      return;
+    }
+
+    setContactModalOpen(true);
   };
 
   if (loading) {
@@ -489,7 +536,7 @@ const ProductDetail = () => {
         <ImageGallery>
           <div className="main-image">
             <img 
-              src={currentImage.url} 
+              src={getImageUrl(currentImage.url)} 
               alt={currentImage.alt || product.name}
               onError={(e) => {
                 e.target.src = '/placeholder-product.png';
@@ -506,7 +553,7 @@ const ProductDetail = () => {
                   onClick={() => setSelectedImageIndex(index)}
                 >
                   <img 
-                    src={image.url} 
+                    src={getImageUrl(image.url)} 
                     alt={image.alt || `${product.name} ${index + 1}`}
                     onError={(e) => {
                       e.target.src = '/placeholder-product.png';
@@ -518,11 +565,13 @@ const ProductDetail = () => {
           )}
         </ImageGallery>
 
-        <ProductInfo inStock={product.inventory.quantity > 0}>
+        <ProductInfo $inStock={product.inventory.quantity > 0}>
           <div className="badges">
             {product.isOrganic && <span className="badge organic">Organic</span>}
             {product.isLocallySourced && <span className="badge local">Local</span>}
             {product.featured && <span className="badge featured">Featured</span>}
+            {product.shipping?.deliveryTime?.sameDay && <span className="badge" style={{background: '#f59e0b'}}>⚡ Same Day</span>}
+            {product.shipping?.canPickup && <span className="badge" style={{background: '#8b5cf6'}}>🏪 Pickup</span>}
           </div>
 
           <h1>{product.name}</h1>
@@ -560,7 +609,12 @@ const ProductDetail = () => {
               onClick={handleAddToCart}
               disabled={product.inventory.quantity === 0}
             >
-              {product.inventory.quantity > 0 ? 'Add to Cart' : 'Out of Stock'}
+              {product.inventory.quantity === 0 
+                ? 'Out of Stock' 
+                : isInCart(product._id) 
+                  ? `In Cart (${getCartItem(product._id)?.quantity || 0})` 
+                  : 'Add to Cart'
+              }
             </button>
             <button 
               className="secondary"
@@ -622,14 +676,18 @@ const ProductDetail = () => {
         <MerchantCard>
           <div className="merchant-header">
             <div className="merchant-avatar">
-              {product.merchant.businessInfo?.businessName?.[0] || 
-               product.merchant.name?.[0] || 
-               '?'}
+              {product.merchant.businessInfo?.businessPhoto?.url ? (
+                <img src={getImageUrl(product.merchant.businessInfo.businessPhoto.url)} alt="Business" />
+              ) : (
+                product.merchant.businessInfo?.businessName?.[0] || 
+                product.merchant.name?.[0] || 
+                '?'
+              )}
             </div>
             <div className="merchant-info">
               <h3>{product.merchant.businessInfo?.businessName || product.merchant.name}</h3>
               <div className="location">
-                📍 {product.merchant.address?.city || 'Local Area'}
+                {product.merchant.address?.city || 'Local Area'}
                 {product.merchant.address?.zipCode && (
                   <span>, {product.merchant.address.zipCode}</span>
                 )}
@@ -666,23 +724,30 @@ const ProductDetail = () => {
             <h4>Delivery Options</h4>
             <div className="delivery-options">
               {product.merchant.businessInfo?.offersPickup && (
-                <div className="option">🏪 Pickup Available</div>
+                <div className="option">Pickup Available</div>
               )}
               {product.merchant.businessInfo?.offersDelivery && (
-                <div className="option">🚚 Local Delivery</div>
+                <div className="option">Local Delivery</div>
               )}
               {product.merchant.businessInfo?.sameDayDelivery && (
-                <div className="option">⚡ Same-Day Delivery</div>
+                <div className="option">Same-Day Delivery</div>
               )}
               {product.merchant.businessInfo?.deliveryRadius && (
                 <div className="option">
-                  📍 Delivers within {product.merchant.businessInfo.deliveryRadius}mi
+                  Delivers within {product.merchant.businessInfo.deliveryRadius}mi
                 </div>
               )}
             </div>
           </div>
         </MerchantCard>
       )}
+
+      <ContactSellerModal
+        isOpen={contactModalOpen}
+        onClose={() => setContactModalOpen(false)}
+        product={product}
+        user={user}
+      />
     </Container>
   );
 };

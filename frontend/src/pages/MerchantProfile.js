@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../config/api';
+import { getImageUrl } from '../utils/imageUrl';
 import styled from 'styled-components';
 
 const Container = styled.div`
@@ -20,16 +21,24 @@ const MerchantHeader = styled.div`
     width: 120px;
     height: 120px;
     border-radius: 50%;
-    background: var(--primary-green-light);
+    background: var(--natural-beige);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 3rem;
     font-weight: 700;
-    color: white;
+    color: var(--text-dark);
     margin: 0 auto 2rem;
     border: 4px solid white;
     box-shadow: var(--shadow);
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
   }
 
   h1 {
@@ -261,7 +270,7 @@ const ProductCard = styled(Link)`
     }
 
     .stock-info {
-      color: ${props => props.inStock ? 'var(--primary-green)' : '#ef4444'};
+      color: ${props => props.$inStock ? 'var(--primary-green)' : '#ef4444'};
       font-size: 0.75rem;
       font-weight: 500;
     }
@@ -371,7 +380,11 @@ const MerchantProfile = () => {
     <Container>
       <MerchantHeader>
         <div className="merchant-avatar">
-          {merchant.businessInfo?.businessName?.[0] || merchant.name?.[0] || '?'}
+          {merchant.businessInfo?.businessPhoto?.url ? (
+            <img src={getImageUrl(merchant.businessInfo.businessPhoto.url)} alt="Business" />
+          ) : (
+            merchant.businessInfo?.businessName?.[0] || merchant.name?.[0] || '?'
+          )}
         </div>
         
         <h1>{merchant.businessInfo?.businessName || merchant.name}</h1>
@@ -496,12 +509,12 @@ const MerchantProfile = () => {
                 <ProductCard 
                   key={product._id} 
                   to={`/products/${product._id}`}
-                  inStock={product.inventory.quantity > 0}
+                  $inStock={product.inventory.quantity > 0}
                 >
                   <div className="product-image">
                     {product.images?.[0] ? (
                       <img 
-                        src={product.images[0].url} 
+                        src={getImageUrl(product.images[0].url)} 
                         alt={product.name}
                         onError={(e) => {
                           e.target.src = '/placeholder-product.png';

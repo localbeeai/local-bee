@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react';
-import axios from 'axios';
+import axios from '../config/api';
+import { getImageUrl } from '../utils/imageUrl';
 import styled from 'styled-components';
 
 const UploadContainer = styled.div`
@@ -7,11 +8,11 @@ const UploadContainer = styled.div`
 `;
 
 const DropZone = styled.div`
-  border: 2px dashed ${props => props.isDragActive ? 'var(--primary-green)' : 'var(--border-light)'};
+  border: 2px dashed ${props => props.$isDragActive ? 'var(--primary-green)' : 'var(--border-light)'};
   border-radius: 1rem;
   padding: 3rem 2rem;
   text-align: center;
-  background: ${props => props.isDragActive ? 'var(--secondary-green)' : 'var(--natural-beige)'};
+  background: ${props => props.$isDragActive ? 'var(--secondary-green)' : 'var(--natural-beige)'};
   cursor: pointer;
   transition: all 0.2s;
   position: relative;
@@ -73,7 +74,7 @@ const ImagePreview = styled.div`
   border-radius: 0.5rem;
   overflow: hidden;
   background: white;
-  border: 2px solid ${props => props.isFeatured ? 'var(--primary-green)' : 'var(--border-light)'};
+  border: 2px solid ${props => props.$isFeatured ? 'var(--primary-green)' : 'var(--border-light)'};
   cursor: grab;
 
   &:active {
@@ -351,7 +352,7 @@ const ImageUpload = ({ images = [], onImagesChange, maxImages = 10 }) => {
 
       {images.length < maxImages && (
         <DropZone
-          isDragActive={isDragActive}
+          $isDragActive={isDragActive}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -401,14 +402,14 @@ const ImageUpload = ({ images = [], onImagesChange, maxImages = 10 }) => {
           {images.map((image, index) => (
             <ImagePreview
               key={`${image.filename}-${index}`}
-              isFeatured={image.isFeatured}
+              $isFeatured={image.isFeatured}
               draggable
               onDragStart={(e) => handleDragStart(e, index)}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => handleImageDrop(e, index)}
             >
               <img 
-                src={image.url} 
+                src={getImageUrl(image.url)} 
                 alt={`Product ${index + 1}`}
                 onError={(e) => {
                   e.target.src = '/placeholder-image.png';

@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['customer', 'merchant'],
+    enum: ['customer', 'merchant', 'admin'],
     default: 'customer'
   },
   phone: {
@@ -51,7 +51,10 @@ const userSchema = new mongoose.Schema({
       type: String,
       required: function() { return this.role === 'merchant'; }
     },
-    businessDescription: String,
+    businessDescription: {
+      type: String,
+      required: function() { return this.role === 'merchant'; }
+    },
     businessType: String,
     businessLicense: String,
     businessPhoto: {
@@ -75,8 +78,19 @@ const userSchema = new mongoose.Schema({
     sameDayDelivery: {
       type: Boolean,
       default: false
-    }
+    },
+    isApproved: {
+      type: Boolean,
+      default: false
+    },
+    approvalReason: String,
+    approvedAt: Date
   },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  deactivatedAt: Date,
   avatar: {
     type: String,
     default: ''

@@ -33,7 +33,11 @@ router.post('/signup', [
   body('businessName')
     .if(body('role').equals('merchant'))
     .notEmpty()
-    .withMessage('Business name is required for merchants')
+    .withMessage('Business name is required for merchants'),
+  body('businessDescription')
+    .if(body('role').equals('merchant'))
+    .notEmpty()
+    .withMessage('Business description is required for merchants')
 ], signup);
 
 router.post('/login', [

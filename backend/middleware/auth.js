@@ -16,6 +16,10 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ message: 'Token is not valid' });
     }
 
+    if (user.isActive === false) {
+      return res.status(401).json({ message: 'Account has been deactivated' });
+    }
+
     req.user = user;
     next();
   } catch (error) {
@@ -39,4 +43,12 @@ const customer = (req, res, next) => {
   }
 };
 
-module.exports = { auth, merchant, customer };
+const admin = (req, res, next) => {
+  if (req.user && req.user.role === 'admin') {
+    next();
+  } else {
+    res.status(403).json({ message: 'Access denied. Admin role required.' });
+  }
+};
+
+module.exports = { auth, merchant, customer, admin };

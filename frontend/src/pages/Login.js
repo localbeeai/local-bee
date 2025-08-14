@@ -51,6 +51,30 @@ const FormGroup = styled.div`
   input {
     width: 100%;
   }
+
+  .password-input-container {
+    position: relative;
+    
+    input {
+      padding-right: 2.5rem;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-light);
+      font-size: 1rem;
+
+      &:hover {
+        color: var(--text-dark);
+      }
+    }
+  }
 `;
 
 const ErrorMessage = styled.div`
@@ -83,6 +107,22 @@ const SubmitButton = styled.button`
   }
 `;
 
+const ForgotPassword = styled.div`
+  text-align: center;
+  margin-top: 1rem;
+
+  a {
+    color: var(--text-light);
+    text-decoration: none;
+    font-size: 0.875rem;
+
+    &:hover {
+      color: var(--primary-green);
+      text-decoration: underline;
+    }
+  }
+`;
+
 const SignupLink = styled.div`
   text-align: center;
   margin-top: 2rem;
@@ -106,6 +146,7 @@ const Login = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -164,21 +205,34 @@ const Login = () => {
 
           <FormGroup>
             <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              placeholder="Enter your password"
-            />
+            <div className="password-input-container">
+              <input
+                type={showPassword ? "text" : "password"}
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                placeholder="Enter your password"
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? "👁️" : "🙈"}
+              </button>
+            </div>
           </FormGroup>
 
           <SubmitButton type="submit" disabled={loading}>
             {loading ? 'Signing In...' : 'Sign In'}
           </SubmitButton>
         </Form>
+
+        <ForgotPassword>
+          <Link to="/forgot-password">Forgot your password?</Link>
+        </ForgotPassword>
 
         <SignupLink>
           Don't have an account? <Link to="/signup">Sign up here</Link>

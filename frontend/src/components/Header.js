@@ -1,7 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import styled from 'styled-components';
+import NotificationBell from './NotificationBell';
+import { getImageUrl } from '../utils/imageUrl';
 import { 
   MagnifyingGlassIcon, 
   ShoppingCartIcon, 
@@ -11,7 +14,8 @@ import {
   ChevronDownIcon,
   BuildingStorefrontIcon,
   Cog6ToothIcon,
-  UserCircleIcon
+  UserCircleIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
 
 const HeaderContainer = styled.header`
@@ -116,9 +120,27 @@ const IconButton = styled.button`
   align-items: center;
   gap: 0.5rem;
   transition: background-color 0.2s;
+  position: relative;
 
   &:hover {
     background-color: var(--secondary-green);
+  }
+
+  .cart-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: #ef4444;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 20px;
   }
 `;
 
@@ -160,7 +182,7 @@ const DropdownButton = styled.button`
     width: 1rem;
     height: 1rem;
     transition: transform 0.2s;
-    transform: ${props => props.isOpen ? 'rotate(180deg)' : 'rotate(0deg)'};
+    transform: ${props => props.$isOpen ? 'rotate(180deg)' : 'rotate(0deg)'};
   }
 `;
 
@@ -174,7 +196,7 @@ const DropdownMenu = styled.div`
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   min-width: 200px;
   z-index: 1000;
-  display: ${props => props.isOpen ? 'block' : 'none'};
+  display: ${props => props.$isOpen ? 'block' : 'none'};
 
   .dropdown-item {
     display: flex;
@@ -231,16 +253,18 @@ const MobileMenu = styled.div`
   }
 
   @media (max-width: 768px) {
-    display: ${props => props.isOpen ? 'block' : 'none'};
+    display: ${props => props.$isOpen ? 'block' : 'none'};
   }
 `;
 
 const Header = () => {
   const { user, logout } = useAuth();
+  const { getCartItemCount, cartItems } = useCart();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0); // TODO: Implement notification system
   const dropdownRef = useRef(null);
 
   const handleSearch = (e) => {
@@ -285,6 +309,29 @@ const Header = () => {
     return user?.name || 'User';
   };
 
+  // Get avatar for user
+  const getAvatar = () => {
+    if (user?.role === 'merchant' && user?.businessInfo?.businessPhoto?.url) {
+      return (
+        <img 
+          src={getImageUrl(user.businessInfo.businessPhoto.url)} 
+          alt="Business"
+          style={{ 
+            width: '1.25rem', 
+            height: '1.25rem', 
+            borderRadius: '50%', 
+            objectFit: 'cover' 
+          }} 
+        />
+      );
+    }
+    return user?.role === 'merchant' ? (
+      <BuildingStorefrontIcon style={{ width: '1.25rem', height: '1.25rem' }} />
+    ) : (
+      <UserIcon style={{ width: '1.25rem', height: '1.25rem' }} />
+    );
+  };
+
   return (
     <HeaderContainer>
       <TopBar>
@@ -318,31 +365,38 @@ const Header = () => {
                   <IconButton>
                     <ShoppingCartIcon style={{ width: '1.5rem', height: '1.5rem' }} />
                     Cart
+                    {getCartItemCount() > 0 && (
+                      <span className="cart-badge">
+                        {getCartItemCount() > 99 ? '99+' : getCartItemCount()}
+                      </span>
+                    )}
                   </IconButton>
                 </NavLink>
+
+                <NotificationBell />
                 
                 <UserDropdown ref={dropdownRef}>
                   <DropdownButton 
-                    isOpen={dropdownOpen}
+                    $isOpen={dropdownOpen}
                     onClick={() => setDropdownOpen(!dropdownOpen)}
                   >
-                    {user.role === 'merchant' ? (
-                      <BuildingStorefrontIcon style={{ width: '1.25rem', height: '1.25rem' }} />
-                    ) : (
-                      <UserIcon style={{ width: '1.25rem', height: '1.25rem' }} />
-                    )}
+                    {getAvatar()}
                     {getDisplayName()}
                     <ChevronDownIcon className="chevron" />
                   </DropdownButton>
                   
-                  <DropdownMenu isOpen={dropdownOpen}>
+                  <DropdownMenu $isOpen={dropdownOpen}>
                     <Link 
-                      to={user.role === 'merchant' ? '/dashboard/merchant' : '/dashboard/customer'}
+                      to={
+                        user.role === 'admin' ? '/dashboard/admin' :
+                        user.role === 'merchant' ? '/dashboard/merchant' : 
+                        '/dashboard/customer'
+                      }
                       className="dropdown-item"
                       onClick={() => setDropdownOpen(false)}
                     >
                       <BuildingStorefrontIcon className="icon" />
-                      Dashboard
+                      {user.role === 'admin' ? 'Admin Panel' : 'Dashboard'}
                     </Link>
                     
                     {user.role === 'merchant' && (
@@ -355,6 +409,14 @@ const Header = () => {
                         My Store
                       </Link>
                     )}
+                    
+                    <button 
+                      className="dropdown-item"
+                      onClick={() => handleDropdownClick('/messages')}
+                    >
+                      <ChatBubbleLeftRightIcon className="icon" />
+                      Messages
+                    </button>
                     
                     <button 
                       className="dropdown-item"
@@ -398,25 +460,60 @@ const Header = () => {
           </MobileMenuButton>
         </Nav>
 
-        <MobileMenu isOpen={mobileMenuOpen}>
+        <MobileMenu $isOpen={mobileMenuOpen}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <NavLink to="/products" onClick={() => setMobileMenuOpen(false)}>
-              Browse Products
+              📦 Browse Products
             </NavLink>
             
             {user ? (
               <>
                 <NavLink to="/cart" onClick={() => setMobileMenuOpen(false)}>
-                  Shopping Cart
+                  🛒 Shopping Cart ({cartItems?.length || 0})
                 </NavLink>
                 <NavLink 
-                  to={user.role === 'merchant' ? '/dashboard/merchant' : '/dashboard/customer'}
+                  to={
+                    user.role === 'admin' ? '/dashboard/admin' :
+                    user.role === 'merchant' ? '/dashboard/merchant' : 
+                    '/dashboard/customer'
+                  }
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Dashboard
+                  {user.role === 'admin' ? '🛡️ Admin Panel' : '📊 Dashboard'}
                 </NavLink>
-                <button onClick={handleLogout} className="btn-secondary">
-                  Logout
+                <NavLink to="/messages" onClick={() => setMobileMenuOpen(false)}>
+                  💬 Messages
+                </NavLink>
+                <NavLink to="/settings" onClick={() => setMobileMenuOpen(false)}>
+                  ⚙️ Settings
+                </NavLink>
+                {user.role === 'merchant' && (
+                  <NavLink to={`/merchant/${user._id || user.id}`} onClick={() => setMobileMenuOpen(false)}>
+                    🏪 My Store
+                  </NavLink>
+                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0' }}>
+                  <span>🔔</span>
+                  <span>Notifications</span>
+                  {unreadCount > 0 && (
+                    <span style={{
+                      background: '#ef4444',
+                      color: 'white',
+                      borderRadius: '50%',
+                      minWidth: '20px',
+                      height: '20px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.75rem',
+                      fontWeight: 'bold'
+                    }}>
+                      {unreadCount}
+                    </span>
+                  )}
+                </div>
+                <button onClick={handleLogout} className="btn-secondary" style={{ marginTop: '1rem' }}>
+                  🚪 Logout
                 </button>
               </>
             ) : (

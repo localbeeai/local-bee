@@ -50,10 +50,14 @@ const getProducts = async (req, res) => {
       query.isLocallySourced = isLocallySourced === 'true';
     }
 
+    if (req.query.featured !== undefined) {
+      query.featured = req.query.featured === 'true';
+    }
+
     const skip = (page - 1) * limit;
 
     const products = await Product.find(query)
-      .populate('merchant', 'name businessInfo avatar location')
+      .populate('merchant', 'name businessInfo avatar location businessPhoto')
       .sort(sort)
       .skip(skip)
       .limit(parseInt(limit));
@@ -80,7 +84,7 @@ const getProducts = async (req, res) => {
 const getProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
-      .populate('merchant', 'name businessInfo avatar location phone')
+      .populate('merchant', 'name businessInfo avatar location phone businessPhoto')
       .populate('reviews.user', 'name avatar');
 
     if (!product) {
@@ -113,10 +117,16 @@ const createProduct = async (req, res) => {
       merchant: req.user.id
     };
 
+    // Clean organicCertificate data if product is not organic or has null values
+    if (!productData.isOrganic || 
+        (productData.organicCertificate && productData.organicCertificate.status === null)) {
+      delete productData.organicCertificate;
+    }
+
     const product = new Product(productData);
     await product.save();
 
-    await product.populate('merchant', 'name businessInfo avatar location');
+    await product.populate('merchant', 'name businessInfo avatar location businessPhoto');
 
     res.status(201).json({
       message: 'Product created successfully',
@@ -152,7 +162,7 @@ const updateProduct = async (req, res) => {
     Object.assign(product, req.body);
     await product.save();
 
-    await product.populate('merchant', 'name businessInfo avatar location');
+    await product.populate('merchant', 'name businessInfo avatar location businessPhoto');
 
     res.json({
       message: 'Product updated successfully',

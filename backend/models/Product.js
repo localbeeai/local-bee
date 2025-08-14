@@ -30,8 +30,13 @@ const productSchema = new mongoose.Schema({
   },
   images: [{
     url: String,
+    filename: String,
     publicId: String,
-    alt: String
+    alt: String,
+    isFeatured: {
+      type: Boolean,
+      default: false
+    }
   }],
   merchant: {
     type: mongoose.Schema.Types.ObjectId,
@@ -58,6 +63,22 @@ const productSchema = new mongoose.Schema({
   isOrganic: {
     type: Boolean,
     default: false
+  },
+  organicCertificate: {
+    url: String,
+    filename: String,
+    originalName: String,
+    status: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending'
+    },
+    reason: String,
+    reviewedAt: Date,
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }
   },
   isLocallySourced: {
     type: Boolean,
@@ -100,6 +121,42 @@ const productSchema = new mongoose.Schema({
       sameDay: {
         type: Boolean,
         default: false
+      }
+    }
+  },
+  fulfillment: {
+    method: {
+      type: String,
+      enum: ['pickup-only', 'delivery-only', 'both'],
+      default: 'pickup-only'
+    },
+    pickupInstructions: {
+      type: String,
+      default: ''
+    },
+    deliveryOptions: {
+      localDelivery: {
+        type: Boolean,
+        default: false
+      },
+      deliveryRadius: {
+        type: Number,
+        default: 5,
+        min: 0
+      },
+      deliveryFee: {
+        type: Number,
+        default: 0,
+        min: 0
+      },
+      freeDeliveryMinimum: {
+        type: Number,
+        default: 25,
+        min: 0
+      },
+      estimatedTime: {
+        type: String,
+        default: '1-2 hours'
       }
     }
   },

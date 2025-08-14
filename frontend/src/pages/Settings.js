@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
+import axios from '../config/api';
+import { getImageUrl } from '../utils/imageUrl';
 import styled from 'styled-components';
 
 const Container = styled.div`
@@ -28,9 +29,17 @@ const TabContainer = styled.div`
 
 const TabButtons = styled.div`
   display: flex;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   margin-bottom: 2rem;
   border-bottom: 1px solid var(--border-light);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  
+  @media (max-width: 768px) {
+    gap: 0.25rem;
+    padding-bottom: 0.5rem;
+  }
 `;
 
 const TabButton = styled.button`
@@ -42,9 +51,21 @@ const TabButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
 
   &:hover {
     color: var(--primary-green);
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
   }
 `;
 
@@ -566,7 +587,7 @@ const Settings = () => {
                 <div className="photo-preview">
                   {businessData.businessPhoto ? (
                     <img 
-                      src={businessData.businessPhoto.url} 
+                      src={getImageUrl(businessData.businessPhoto.url)} 
                       alt="Business Profile" 
                     />
                   ) : (
@@ -689,6 +710,191 @@ const Settings = () => {
     </>
   );
 
+  const renderSecurityTab = () => (
+    <Section>
+      <SectionHeader>
+        <h2>Security Settings</h2>
+        <p>Manage your password and security preferences</p>
+      </SectionHeader>
+      <SectionContent>
+        <Form>
+          <FormGroup>
+            <label>Change Password</label>
+            <input type="password" placeholder="Current password" />
+          </FormGroup>
+          <FormGroup>
+            <input type="password" placeholder="New password" />
+          </FormGroup>
+          <FormGroup>
+            <input type="password" placeholder="Confirm new password" />
+          </FormGroup>
+          <ButtonGroup>
+            <button type="button" className="btn-primary">
+              Update Password
+            </button>
+          </ButtonGroup>
+        </Form>
+
+        <hr style={{ margin: '2rem 0', border: 'none', borderTop: '1px solid var(--border-light)' }} />
+
+        <Form>
+          <FormGroup>
+            <label>
+              <input type="checkbox" /> Enable two-factor authentication
+            </label>
+            <small style={{ color: 'var(--text-light)', display: 'block', marginTop: '0.5rem' }}>
+              Add an extra layer of security to your account
+            </small>
+          </FormGroup>
+          <FormGroup>
+            <label>
+              <input type="checkbox" /> Email notifications for login attempts
+            </label>
+          </FormGroup>
+        </Form>
+      </SectionContent>
+    </Section>
+  );
+
+  const renderNotificationsTab = () => (
+    <Section>
+      <SectionHeader>
+        <h2>Notification Preferences</h2>
+        <p>Choose how you want to be notified</p>
+      </SectionHeader>
+      <SectionContent>
+        <Form>
+          <h3 style={{ marginBottom: '1rem', color: 'var(--text-dark)' }}>Email Notifications</h3>
+          <FormGroup>
+            <label>
+              <input type="checkbox" defaultChecked /> New orders and purchases
+            </label>
+          </FormGroup>
+          <FormGroup>
+            <label>
+              <input type="checkbox" defaultChecked /> Messages from buyers/sellers
+            </label>
+          </FormGroup>
+          <FormGroup>
+            <label>
+              <input type="checkbox" /> Marketing and promotional emails
+            </label>
+          </FormGroup>
+          <FormGroup>
+            <label>
+              <input type="checkbox" defaultChecked /> Account security updates
+            </label>
+          </FormGroup>
+
+          <hr style={{ margin: '2rem 0', border: 'none', borderTop: '1px solid var(--border-light)' }} />
+
+          <h3 style={{ marginBottom: '1rem', color: 'var(--text-dark)' }}>Push Notifications</h3>
+          <FormGroup>
+            <label>
+              <input type="checkbox" defaultChecked /> New messages
+            </label>
+          </FormGroup>
+          <FormGroup>
+            <label>
+              <input type="checkbox" defaultChecked /> Order updates
+            </label>
+          </FormGroup>
+
+          <ButtonGroup>
+            <button type="button" className="btn-primary">
+              Save Preferences
+            </button>
+          </ButtonGroup>
+        </Form>
+      </SectionContent>
+    </Section>
+  );
+
+  const renderPaymentsTab = () => (
+    <Section>
+      <SectionHeader>
+        <h2>Payment Methods</h2>
+        <p>Manage your payment and billing information</p>
+      </SectionHeader>
+      <SectionContent>
+        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-light)' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💳</div>
+          <h3 style={{ marginBottom: '1rem' }}>Payment Integration Coming Soon</h3>
+          <p>We're working on integrating secure payment processing. This will include:</p>
+          <ul style={{ textAlign: 'left', margin: '1rem 0', paddingLeft: '2rem' }}>
+            <li>Credit and debit card management</li>
+            <li>PayPal integration</li>
+            <li>Bank account linking</li>
+            <li>Transaction history</li>
+          </ul>
+        </div>
+      </SectionContent>
+    </Section>
+  );
+
+  const renderPrivacyTab = () => (
+    <Section>
+      <SectionHeader>
+        <h2>Privacy Settings</h2>
+        <p>Control your privacy and data preferences</p>
+      </SectionHeader>
+      <SectionContent>
+        <Form>
+          <h3 style={{ marginBottom: '1rem', color: 'var(--text-dark)' }}>Profile Visibility</h3>
+          <FormGroup>
+            <label>
+              <input type="radio" name="profileVisibility" defaultChecked /> Public - Anyone can see your profile
+            </label>
+          </FormGroup>
+          <FormGroup>
+            <label>
+              <input type="radio" name="profileVisibility" /> Limited - Only customers you've sold to
+            </label>
+          </FormGroup>
+          <FormGroup>
+            <label>
+              <input type="radio" name="profileVisibility" /> Private - Only you can see your profile
+            </label>
+          </FormGroup>
+
+          <hr style={{ margin: '2rem 0', border: 'none', borderTop: '1px solid var(--border-light)' }} />
+
+          <h3 style={{ marginBottom: '1rem', color: 'var(--text-dark)' }}>Data & Analytics</h3>
+          <FormGroup>
+            <label>
+              <input type="checkbox" defaultChecked /> Allow analytics for improving our service
+            </label>
+          </FormGroup>
+          <FormGroup>
+            <label>
+              <input type="checkbox" /> Share anonymized data with partners
+            </label>
+          </FormGroup>
+
+          <hr style={{ margin: '2rem 0', border: 'none', borderTop: '1px solid var(--border-light)' }} />
+
+          <h3 style={{ marginBottom: '1rem', color: 'var(--text-dark)' }}>Contact Preferences</h3>
+          <FormGroup>
+            <label>
+              <input type="checkbox" defaultChecked /> Allow customers to contact me directly
+            </label>
+          </FormGroup>
+          <FormGroup>
+            <label>
+              <input type="checkbox" /> Show my location to potential customers
+            </label>
+          </FormGroup>
+
+          <ButtonGroup>
+            <button type="button" className="btn-primary">
+              Save Privacy Settings
+            </button>
+          </ButtonGroup>
+        </Form>
+      </SectionContent>
+    </Section>
+  );
+
   return (
     <Container>
       <Header>
@@ -712,10 +918,38 @@ const Settings = () => {
               Business Info
             </TabButton>
           )}
+          <TabButton 
+            active={activeTab === 'security'} 
+            onClick={() => setActiveTab('security')}
+          >
+            Security
+          </TabButton>
+          <TabButton 
+            active={activeTab === 'notifications'} 
+            onClick={() => setActiveTab('notifications')}
+          >
+            Notifications
+          </TabButton>
+          <TabButton 
+            active={activeTab === 'payments'} 
+            onClick={() => setActiveTab('payments')}
+          >
+            Payments
+          </TabButton>
+          <TabButton 
+            active={activeTab === 'privacy'} 
+            onClick={() => setActiveTab('privacy')}
+          >
+            Privacy
+          </TabButton>
         </TabButtons>
 
         {activeTab === 'profile' && renderProfileTab()}
         {activeTab === 'business' && user?.role === 'merchant' && renderBusinessTab()}
+        {activeTab === 'security' && renderSecurityTab()}
+        {activeTab === 'notifications' && renderNotificationsTab()}
+        {activeTab === 'payments' && renderPaymentsTab()}
+        {activeTab === 'privacy' && renderPrivacyTab()}
       </TabContainer>
     </Container>
   );

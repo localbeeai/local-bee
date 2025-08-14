@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
+import axios from '../config/api';
+import { getImageUrl } from '../utils/imageUrl';
 import styled from 'styled-components';
 
 const Container = styled.div`
@@ -101,13 +103,17 @@ const ProductCard = styled(Link)`
   }
 
   .product-image {
-    height: 200px;
+    height: 250px;
     background: var(--natural-beige);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 3rem;
     position: relative;
+    
+    @media (min-width: 768px) {
+      height: 280px;
+    }
 
     img {
       width: 100%;
@@ -140,6 +146,37 @@ const ProductCard = styled(Link)`
         }
       }
     }
+
+    .favorite-btn {
+      position: absolute;
+      top: 0.5rem;
+      left: 0.5rem;
+      background: rgba(255, 255, 255, 0.9);
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.25rem;
+      transition: all 0.2s;
+      backdrop-filter: blur(8px);
+
+      &:hover {
+        background: rgba(255, 255, 255, 1);
+        transform: scale(1.1);
+      }
+
+      &.favorited {
+        color: #ef4444;
+      }
+
+      &.not-favorited {
+        color: #d1d5db;
+      }
+    }
   }
 
   .product-content {
@@ -157,11 +194,19 @@ const ProductCard = styled(Link)`
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        background: var(--primary-green-light);
+        background: var(--natural-beige);
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 0.625rem;
+        color: var(--text-dark);
+        overflow: hidden;
+
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
       }
     }
 
@@ -317,17 +362,20 @@ const Pagination = styled.div`
 `;
 
 const Products = () => {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({});
+  const [userFavorites, setUserFavorites] = useState([]);
   const [filters, setFilters] = useState({
     search: searchParams.get('search') || '',
     category: searchParams.get('category') || '',
     minPrice: searchParams.get('minPrice') || '',
     maxPrice: searchParams.get('maxPrice') || '',
     isOrganic: searchParams.get('isOrganic') || '',
-    sort: searchParams.get('sort') || '-createdAt'
+    sort: searchParams.get('sort') || '-createdAt',
+    distance: searchParams.get('distance') || ''
   });
 
   const categories = [
@@ -352,12 +400,17 @@ const Products = () => {
     { value: 'price', label: 'Price: Low to High' },
     { value: '-price', label: 'Price: High to Low' },
     { value: '-rating.average', label: 'Highest Rated' },
-    { value: 'name', label: 'Name A-Z' }
+    { value: 'name', label: 'Name A-Z' },
+    { value: 'distance', label: 'Distance: Nearest First' }
   ];
 
   useEffect(() => {
     fetchProducts();
   }, [searchParams]);
+
+  useEffect(() => {
+    fetchUserFavorites();
+  }, [user]);
 
   const fetchProducts = async (page = 1) => {
     setLoading(true);
@@ -385,8 +438,16 @@ const Products = () => {
   const applyFilters = () => {
     const newParams = new URLSearchParams();
     Object.entries(filters).forEach(([key, value]) => {
-      if (value) {
-        newParams.set(key, value);
+      if (value && value !== '') {
+        // Validate price fields are numbers
+        if ((key === 'minPrice' || key === 'maxPrice') && value) {
+          const numValue = parseFloat(value);
+          if (!isNaN(numValue) && numValue >= 0) {
+            newParams.set(key, numValue.toString());
+          }
+        } else {
+          newParams.set(key, value);
+        }
       }
     });
     setSearchParams(newParams);
@@ -399,9 +460,51 @@ const Products = () => {
       minPrice: '',
       maxPrice: '',
       isOrganic: '',
-      sort: '-createdAt'
+      sort: '-createdAt',
+      distance: ''
     });
     setSearchParams({});
+  };
+
+  const fetchUserFavorites = async () => {
+    if (!user) return;
+    try {
+      // Use localStorage for now since API endpoints may not exist
+      const userId = user._id || user.id;
+      const storedFavorites = localStorage.getItem(`favorites_${userId}`);
+      if (storedFavorites) {
+        setUserFavorites(JSON.parse(storedFavorites));
+      }
+    } catch (error) {
+      console.error('Error fetching favorites:', error);
+    }
+  };
+
+  const toggleFavorite = async (productId) => {
+    if (!user) {
+      alert('Please log in to add favorites');
+      return;
+    }
+
+    try {
+      const isFavorited = userFavorites.includes(productId);
+      let newFavorites;
+      
+      if (isFavorited) {
+        newFavorites = userFavorites.filter(id => id !== productId);
+      } else {
+        newFavorites = [...userFavorites, productId];
+      }
+      
+      setUserFavorites(newFavorites);
+      // Store in localStorage for persistence
+      const userId = user._id || user.id;
+      localStorage.setItem(`favorites_${userId}`, JSON.stringify(newFavorites));
+      
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      alert('Failed to update favorites');
+    }
   };
 
   const renderStars = (rating) => {
@@ -504,6 +607,21 @@ const Products = () => {
         </div>
 
         <div className="filter-group">
+          <label>Distance</label>
+          <select
+            value={filters.distance}
+            onChange={(e) => handleFilterChange('distance', e.target.value)}
+          >
+            <option value="">Any Distance</option>
+            <option value="5">Within 5 miles</option>
+            <option value="10">Within 10 miles</option>
+            <option value="25">Within 25 miles</option>
+            <option value="50">Within 50 miles</option>
+            <option value="100">Within 100 miles</option>
+          </select>
+        </div>
+
+        <div className="filter-group">
           <label>Sort By</label>
           <select
             value={filters.sort}
@@ -543,10 +661,26 @@ const Products = () => {
             {products.map(product => (
               <ProductCard key={product._id} to={`/products/${product._id}`}>
                 <div className="product-image">
-                  {product.images?.[0] ? (
-                    <img src={product.images[0].url} alt={product.name} />
+                  {product.images?.length > 0 ? (
+                    <img 
+                      src={getImageUrl((product.images.find(img => img.isFeatured) || product.images[0]).url)} 
+                      alt={product.name} 
+                    />
                   ) : (
                     '📷'
+                  )}
+                  {user && (
+                    <button
+                      className={`favorite-btn ${userFavorites.includes(product._id) ? 'favorited' : 'not-favorited'}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleFavorite(product._id);
+                      }}
+                      title={userFavorites.includes(product._id) ? 'Remove from favorites' : 'Add to favorites'}
+                    >
+                      ❤️
+                    </button>
                   )}
                   <div className="badges">
                     {product.isOrganic && <span className="badge organic">Organic</span>}
@@ -556,8 +690,12 @@ const Products = () => {
                 <div className="product-content">
                   <div className="merchant-info">
                     <div className="merchant-avatar">
-                      {product.merchant?.businessInfo?.businessName?.[0] || 
-                       product.merchant?.name?.[0] || '?'}
+                      {product.merchant?.businessInfo?.businessPhoto?.url ? (
+                        <img src={getImageUrl(product.merchant.businessInfo.businessPhoto.url)} alt="Business" />
+                      ) : (
+                        product.merchant?.businessInfo?.businessName?.[0] || 
+                        product.merchant?.name?.[0] || '?'
+                      )}
                     </div>
                     <span>
                       {product.merchant?.businessInfo?.businessName || 
@@ -592,7 +730,41 @@ const Products = () => {
                     }
                   </div>
                   
-                  {product.merchant?.address?.zipCode && (
+                  {(product.shipping?.deliveryTime?.sameDay || product.shipping?.canPickup) && (
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: 'var(--text-dark)',
+                      marginTop: '0.5rem',
+                      display: 'flex',
+                      gap: '0.5rem',
+                      flexWrap: 'wrap'
+                    }}>
+                      {product.shipping?.deliveryTime?.sameDay && (
+                        <span style={{
+                          background: 'var(--primary-green)',
+                          color: 'white',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: '0.25rem',
+                          fontWeight: '500'
+                        }}>
+                          Same Day
+                        </span>
+                      )}
+                      {product.shipping?.canPickup && (
+                        <span style={{
+                          background: 'var(--accent-green)',
+                          color: 'var(--text-dark)',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: '0.25rem',
+                          fontWeight: '500'
+                        }}>
+                          Pickup
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  
+                  {product.distance !== undefined && (
                     <div style={{
                       fontSize: '0.75rem',
                       color: 'var(--text-light)',
@@ -601,7 +773,7 @@ const Products = () => {
                       alignItems: 'center',
                       gap: '0.25rem'
                     }}>
-                      📍 {product.merchant.address.zipCode}
+                      {product.distance <= 10 ? 'Local' : `${product.distance.toFixed(1)} mi away`}
                       {product.merchant.businessInfo?.deliveryRadius && (
                         <span style={{ color: 'var(--primary-green)' }}>
                           • Delivers within {product.merchant.businessInfo.deliveryRadius}mi
