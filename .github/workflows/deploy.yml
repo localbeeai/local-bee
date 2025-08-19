@@ -1,0 +1,168 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ production ]
+  pull_request:
+    branches: [ production ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:7.0
+        env:
+          MONGO_INITDB_ROOT_USERNAME: admin
+          MONGO_INITDB_ROOT_PASSWORD: test
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: |
+          backend/package-lock.json
+          frontend/package-lock.json
+
+    - name: Install backend dependencies
+      run: |
+        cd backend
+        npm ci
+
+    - name: Install frontend dependencies
+      run: |
+        cd frontend
+        npm ci
+
+    - name: Run backend tests
+      run: |
+        cd backend
+        npm test
+      env:
+        NODE_ENV: test
+        MONGODB_URI: mongodb://admin:test@localhost:27017/localmarket_test?authSource=admin
+        JWT_SECRET: test_jwt_secret_for_testing_only
+
+    - name: Run frontend tests
+      run: |
+        cd frontend
+        npm test -- --coverage --watchAll=false
+      env:
+        CI: true
+
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm run build
+      env:
+        REACT_APP_API_URL: https://yourdomain.com/api
+        REACT_APP_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+
+    - name: Security audit
+      run: |
+        cd backend && npm audit --audit-level high
+        cd ../frontend && npm audit --audit-level high
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/production'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    - name: Add server to known hosts
+      run: |
+        ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+    - name: Create deployment package
+      run: |
+        tar -czf deployment.tar.gz \
+          --exclude='.git' \
+          --exclude='node_modules' \
+          --exclude='.env*' \
+          --exclude='logs' \
+          --exclude='uploads' \
+          .
+
+    - name: Upload deployment package
+      run: |
+        scp deployment.tar.gz ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/
+
+    - name: Deploy to production
+      run: |
+        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          set -e
+          
+          # Create backup of current deployment
+          if [ -d "/home/deploy/LocalMarket" ]; then
+            sudo cp -r /home/deploy/LocalMarket /home/deploy/LocalMarket.backup.$(date +%Y%m%d_%H%M%S)
+          fi
+          
+          # Extract new deployment
+          cd /home/deploy
+          tar -xzf /tmp/deployment.tar.gz -C LocalMarket --strip-components=0 || tar -xzf /tmp/deployment.tar.gz
+          cd LocalMarket
+          
+          # Install dependencies
+          cd backend && npm ci --only=production
+          cd ../frontend && npm ci && npm run build
+          cd ..
+          
+          # Update PM2 processes
+          pm2 reload ecosystem.config.js --update-env || pm2 start ecosystem.config.js
+          
+          # Health check
+          sleep 10
+          curl -f http://localhost:5000/health || (pm2 logs --lines 50 && exit 1)
+          
+          # Cleanup
+          rm /tmp/deployment.tar.gz
+          
+          echo "Deployment completed successfully!"
+        EOF
+
+    - name: Notify deployment status
+      if: always()
+      run: |
+        if [ "${{ job.status }}" == "success" ]; then
+          echo "✅ Deployment successful!"
+        else
+          echo "❌ Deployment failed!"
+        fi
+
+  cleanup:
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Cleanup old deployments
+      run: |
+        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          # Keep only last 5 backups
+          cd /home/deploy
+          ls -t LocalMarket.backup.* 2>/dev/null | tail -n +6 | xargs -r rm -rf
+          
+          # Clean up old Docker images if using Docker
+          # docker system prune -f
+        EOF
