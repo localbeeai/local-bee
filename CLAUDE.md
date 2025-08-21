@@ -3,7 +3,7 @@
 ## 🎯 CURRENT STATUS: LIVE IN PRODUCTION
 
 **Website URL:** https://topresponder.net  
-**Last Updated:** August 21, 2025  
+**Last Updated:** August 21, 2025 - 7:40 PM  
 **Status:** ✅ FULLY OPERATIONAL
 
 ---
@@ -96,6 +96,8 @@ sudo certbot certificates
 3. **Auth Endpoints**: Fixed `/register` vs `/signup` mismatch in rate limiter
 4. **SSL Certificates**: Successfully installed with Let's Encrypt
 5. **Image Uploads**: Fixed nginx serving and parent directory permissions
+6. **Products Page Empty**: Fixed product controller query with incorrect `isApproved` condition
+7. **Trust Proxy**: Added `app.set('trust proxy', true)` to fix rate limiting behind nginx
 
 ### Current Configuration Status
 - ✅ MongoDB Atlas connected and working
