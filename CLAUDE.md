@@ -95,6 +95,7 @@ sudo certbot certificates
 2. **API Routing**: Fixed double `/api/api/` issue in frontend
 3. **Auth Endpoints**: Fixed `/register` vs `/signup` mismatch in rate limiter
 4. **SSL Certificates**: Successfully installed with Let's Encrypt
+5. **Image Uploads**: Fixed nginx serving and parent directory permissions
 
 ### Current Configuration Status
 - ✅ MongoDB Atlas connected and working
@@ -102,6 +103,8 @@ sudo certbot certificates
 - ✅ User signup/login working
 - ✅ API endpoints responding correctly
 - ✅ Frontend serving from HTTPS
+- ✅ Image uploads working (products and merchant profiles)
+- ✅ Admin account access configured
 - ⚠️ Using placeholder values for Stripe, SendGrid, Cloudinary
 
 ### Environment Variables (in ecosystem.config.js)

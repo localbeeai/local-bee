@@ -86,6 +86,39 @@ ssh deploy@167.172.245.227 "sudo certbot renew"
 ssh deploy@167.172.245.227 "cd LocalMarket/frontend && npm run build && cd .. && pm2 restart localmarket-frontend"
 ```
 
+### 6. Image Upload Issues (403 Forbidden)
+
+**Symptoms:**
+- Product photos not displaying
+- Merchant profile photos not loading
+- 403 Forbidden when accessing /uploads/ URLs
+
+**Diagnostics:**
+```bash
+# Test image serving
+curl -I https://topresponder.net/uploads/filename.jpg
+
+# Check nginx logs
+sudo tail -10 /var/log/nginx/error.log
+
+# Check file permissions
+ls -la LocalMarket/backend/uploads/
+```
+
+**Fix:**
+```bash
+# Fix parent directory permissions (critical for nginx access)
+sudo chmod 755 /home/deploy/
+sudo chmod 755 /home/deploy/LocalMarket/
+sudo chmod 755 /home/deploy/LocalMarket/backend/
+
+# Fix uploads directory ownership and permissions
+sudo chown -R www-data:www-data LocalMarket/backend/uploads/
+sudo chmod -R 755 LocalMarket/backend/uploads/
+```
+
+**Root Cause:** Nginx (www-data user) needs execute permissions on all parent directories to access uploaded files.
+
 ---
 
 ## 🔍 Diagnostic Commands
