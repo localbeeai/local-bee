@@ -11,6 +11,9 @@ dotenv.config();
 
 const app = express();
 
+// Trust proxy (needed when behind nginx)
+app.set('trust proxy', true);
+
 // Configure Winston Logger
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
