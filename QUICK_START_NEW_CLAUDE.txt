@@ -1,0 +1,31 @@
+===============================================================================
+    COPY-PASTE MESSAGE FOR NEW CLAUDE CODE SESSIONS
+===============================================================================
+
+Hi Claude! I need help with my LocalMarket production deployment. This is a live MERN stack e-commerce platform currently running at https://topresponder.net. 
+
+CRITICAL: Please start by reading these documentation files:
+1. C:\Users\colli\Desktop\localmarket\CLAUDE.md - Complete project overview
+2. C:\Users\colli\Desktop\localmarket\TROUBLESHOOTING.md - Common issues and fixes  
+3. C:\Users\colli\Desktop\localmarket\CURRENT_CONFIG.md - Exact working configuration
+
+Project Context:
+- Status: ✅ LIVE and fully operational production system
+- Website: https://topresponder.net (temporary domain, will migrate to localbee.ai)
+- Server: DigitalOcean Ubuntu 24.04 LTS at 167.172.245.227
+- Stack: React frontend, Node.js backend, MongoDB Atlas, PM2, Nginx, SSL
+- SSH Access: ssh deploy@167.172.245.227
+
+Recent Work: We just completed full production deployment including SSL certificates, MongoDB Atlas integration, and fixed all auth/API routing issues. User signup and core functionality are working perfectly.
+
+Your Tasks: 
+1. Read the documentation files above to understand the current setup
+2. Help me with [describe your specific issue or task here]
+3. IMPORTANT: After any configuration changes, please update the documentation files (CLAUDE.md, TROUBLESHOOTING.md, CURRENT_CONFIG.md) to reflect the changes
+4. Commit any documentation updates to GitHub for continuity
+
+The system is live and serving real users, so please be careful with any changes and always verify health status before/after modifications.
+
+===============================================================================
+    SAVE THIS FILE - USE IT WHENEVER YOU START A NEW CLAUDE SESSION
+===============================================================================

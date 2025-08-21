@@ -250,4 +250,43 @@ pm2 restart all
 
 ---
 
+---
+
+## 🔄 MANDATORY: Documentation Maintenance
+
+### For ALL Claude Sessions (Current and Future):
+
+**CRITICAL RULE: After any configuration change, ALWAYS update these files:**
+
+1. **CLAUDE.md** - Update status, add new fixes, modify configuration details
+2. **TROUBLESHOOTING.md** - Add new issues and solutions encountered  
+3. **CURRENT_CONFIG.md** - Update with any configuration changes made
+
+### Auto-Update Process:
+```bash
+# After making any changes to the production system:
+cd /c/Users/colli/Desktop/localmarket
+
+# Update the relevant documentation files with new information
+# Then commit and push:
+git add CLAUDE.md TROUBLESHOOTING.md CURRENT_CONFIG.md
+git commit -m "Update documentation: [describe what changed]
+
+🤖 Generated with Claude Code (https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+git push
+```
+
+### Documentation Update Checklist:
+- [ ] Status and timestamp updated in CLAUDE.md
+- [ ] New issues added to TROUBLESHOOTING.md (if any)
+- [ ] Configuration changes reflected in CURRENT_CONFIG.md
+- [ ] Changes committed to GitHub
+- [ ] User informed of documentation updates
+
+**Remember: These docs are the lifeline for future Claude sessions - keep them current!**
+
+---
+
 **This file should give any new Claude session everything needed to continue supporting the LocalMarket production deployment.**
