@@ -18,7 +18,7 @@ const getProducts = async (req, res) => {
       sort = '-createdAt'
     } = req.query;
 
-    let query = { isActive: true };
+    let query = { isActive: true, approvalStatus: 'approved' };
 
     if (search) {
       query.$text = { $search: search };

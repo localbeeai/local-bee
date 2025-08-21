@@ -567,7 +567,7 @@ const ProductDetail = () => {
 
         <ProductInfo $inStock={product.inventory.quantity > 0}>
           <div className="badges">
-            {product.isOrganic && <span className="badge organic">Organic</span>}
+            {product.isOrganic && product.organicCertificate?.status === 'approved' && <span className="badge organic">Organic</span>}
             {product.isLocallySourced && <span className="badge local">Local</span>}
             {product.featured && <span className="badge featured">Featured</span>}
             {product.shipping?.deliveryTime?.sameDay && <span className="badge" style={{background: '#f59e0b'}}>⚡ Same Day</span>}
@@ -644,7 +644,7 @@ const ProductDetail = () => {
                 <div className="label">Unit</div>
                 <div className="value">{product.inventory.unit}</div>
               </div>
-              {product.isOrganic && (
+              {product.isOrganic && product.organicCertificate?.status === 'approved' && (
                 <div className="detail-item">
                   <div className="label">Certification</div>
                   <div className="value">Certified Organic</div>

@@ -683,7 +683,7 @@ const Products = () => {
                     </button>
                   )}
                   <div className="badges">
-                    {product.isOrganic && <span className="badge organic">Organic</span>}
+                    {product.isOrganic && product.organicCertificate?.status === 'approved' && <span className="badge organic">Organic</span>}
                     {product.isLocallySourced && <span className="badge local">Local</span>}
                   </div>
                 </div>

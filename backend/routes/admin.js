@@ -26,6 +26,10 @@ router.get('/stats', auth, admin, async (req, res) => {
       isOrganic: true,
       'organicCertificate.status': 'pending'
     });
+    
+    const pendingProducts = await Product.countDocuments({
+      approvalStatus: 'pending'
+    });
 
     // Recent activity
     const recentUsers = await User.find()
@@ -47,7 +51,8 @@ router.get('/stats', auth, admin, async (req, res) => {
         totalProducts,
         totalOrders,
         pendingMerchants,
-        pendingOrganic
+        pendingOrganic,
+        pendingProducts
       },
       recentActivity: {
         recentUsers,
@@ -110,6 +115,7 @@ router.get('/products', auth, admin, async (req, res) => {
     const filter = {};
     if (req.query.category) filter.category = req.query.category;
     if (req.query.isOrganic) filter.isOrganic = req.query.isOrganic === 'true';
+    if (req.query.status) filter.approvalStatus = req.query.status;
     if (req.query.search) {
       filter.$or = [
         { name: { $regex: req.query.search, $options: 'i' } },
@@ -179,6 +185,55 @@ router.put('/users/:id/approve', auth, admin, async (req, res) => {
     res.json({ message: `Merchant ${approved ? 'approved' : 'rejected'} successfully` });
   } catch (error) {
     console.error('Approve merchant error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Approve/reject product
+router.put('/products/:id/approve', auth, admin, async (req, res) => {
+  try {
+    const { approved, reason } = req.body;
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    product.approvalStatus = approved ? 'approved' : 'rejected';
+    if (reason) product.rejectionReason = reason;
+    if (approved) {
+      product.approvedAt = new Date();
+      product.approvedBy = req.user._id;
+    }
+
+    await product.save();
+
+    // Send email notification to merchant
+    try {
+      const populatedProduct = await Product.findById(product._id).populate('merchant', 'name email');
+      if (populatedProduct.merchant) {
+        if (approved) {
+          await sendEmail(
+            populatedProduct.merchant.email,
+            'productApproved',
+            [populatedProduct.merchant.name, populatedProduct.name]
+          );
+        } else {
+          await sendEmail(
+            populatedProduct.merchant.email,
+            'productRejected',
+            [populatedProduct.merchant.name, populatedProduct.name, reason || 'Product did not meet our requirements']
+          );
+        }
+      }
+    } catch (emailError) {
+      console.error('Email notification failed:', emailError);
+      // Don't fail the approval process if email fails
+    }
+
+    res.json({ message: `Product ${approved ? 'approved' : 'rejected'} successfully` });
+  } catch (error) {
+    console.error('Approve product error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -331,9 +386,14 @@ router.get('/pending', auth, admin, async (req, res) => {
       'organicCertificate.status': 'pending'
     }).populate('merchant', 'name businessInfo.businessName email');
 
+    const pendingProducts = await Product.find({
+      approvalStatus: 'pending'
+    }).populate('merchant', 'name businessInfo.businessName email');
+
     res.json({
       pendingMerchants,
-      pendingOrganic
+      pendingOrganic,
+      pendingProducts
     });
   } catch (error) {
     console.error('Get pending approvals error:', error);
