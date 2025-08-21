@@ -493,6 +493,79 @@ const AdminDashboard = () => {
     }
   };
 
+  // Action handlers
+  const handleApproveMerchant = async (userId, approved, reason = '') => {
+    try {
+      await axios.put(`/api/admin/users/${userId}/approve`, { approved, reason });
+      fetchAdminData();
+    } catch (error) {
+      console.error('Error approving merchant:', error);
+      alert('Failed to update merchant status');
+    }
+  };
+
+  const handleToggleUserStatus = async (userId, currentStatus) => {
+    try {
+      if (currentStatus) {
+        await axios.delete(`/api/admin/users/${userId}`);
+      } else {
+        await axios.put(`/api/admin/users/${userId}/reactivate`);
+      }
+      fetchAdminData();
+    } catch (error) {
+      console.error('Error toggling user status:', error);
+      alert('Failed to update user status');
+    }
+  };
+
+  const handleToggleProductStatus = async (productId, currentStatus) => {
+    try {
+      await axios.put(`/api/admin/products/${productId}/toggle-status`, { 
+        isActive: !currentStatus 
+      });
+      fetchAdminData();
+    } catch (error) {
+      console.error('Error toggling product status:', error);
+      alert('Failed to update product status');
+    }
+  };
+
+  const handleDeleteProduct = async (productId) => {
+    try {
+      await axios.delete(`/api/admin/products/${productId}`);
+      fetchAdminData();
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      alert('Failed to delete product');
+    }
+  };
+
+  const handleApproveOrganic = async (productId, status, reason = '') => {
+    try {
+      await axios.put(`/api/admin/products/${productId}/organic-certificate`, { 
+        status, 
+        reason 
+      });
+      fetchAdminData();
+    } catch (error) {
+      console.error('Error updating organic certificate:', error);
+      alert('Failed to update organic certificate status');
+    }
+  };
+
+  const handleApproveProduct = async (productId, approved, reason = '') => {
+    try {
+      await axios.put(`/api/admin/products/${productId}/approve`, { 
+        approved, 
+        reason 
+      });
+      fetchAdminData();
+    } catch (error) {
+      console.error('Error approving product:', error);
+      alert('Failed to update product approval status');
+    }
+  };
+
   if (user?.role !== 'admin') {
     return (
       <Container>
@@ -537,9 +610,14 @@ const AdminDashboard = () => {
           <div className="stat-number">{stats.pendingOrganic || 0}</div>
           <div className="stat-label">Pending Organic Reviews</div>
         </StatCard>
+        <StatCard className={stats.pendingProducts > 0 ? 'alert' : ''}>
+          <div className="stat-icon">📋</div>
+          <div className="stat-number">{stats.pendingProducts || 0}</div>
+          <div className="stat-label">Pending Product Approvals</div>
+        </StatCard>
       </StatsGrid>
 
-      {(pendingApprovals.pendingMerchants?.length > 0 || pendingApprovals.pendingOrganic?.length > 0) && (
+      {(pendingApprovals.pendingMerchants?.length > 0 || pendingApprovals.pendingOrganic?.length > 0 || pendingApprovals.pendingProducts?.length > 0) && (
         <Section>
           <SectionHeader>
             <h2>⚠️ Pending Approvals</h2>
@@ -632,6 +710,49 @@ const AdminDashboard = () => {
                       <Button 
                         className="reject" 
                         onClick={() => handleApproveOrganic(product._id, 'rejected')}
+                        style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                      >
+                        Reject
+                      </Button>
+                    </div>
+                  </TableRow>
+                ))}
+              </Table>
+            </div>
+          )}
+
+          {pendingApprovals.pendingProducts?.length > 0 && (
+            <div style={{ padding: '1.5rem', borderTop: '1px solid var(--border-light)' }}>
+              <h3>Product Approvals</h3>
+              <Table>
+                <TableRow className="header" columns="2fr 1fr 1fr 2fr">
+                  <div>Product</div>
+                  <div>Merchant</div>
+                  <div>Submitted</div>
+                  <div>Actions</div>
+                </TableRow>
+                {pendingApprovals.pendingProducts.map(product => (
+                  <TableRow key={product._id} columns="2fr 1fr 1fr 2fr">
+                    <div>
+                      <strong>{product.name}</strong>
+                      <br />
+                      <small style={{ color: 'var(--text-light)' }}>
+                        ${product.price} • {product.category}
+                      </small>
+                    </div>
+                    <div>{product.merchant?.businessInfo?.businessName || product.merchant?.name}</div>
+                    <div>{new Date(product.createdAt).toLocaleDateString()}</div>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <Button 
+                        className="approve" 
+                        onClick={() => handleApproveProduct(product._id, true)}
+                        style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                      >
+                        Approve
+                      </Button>
+                      <Button 
+                        className="reject" 
+                        onClick={() => handleApproveProduct(product._id, false)}
                         style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
                       >
                         Reject
@@ -783,6 +904,18 @@ const AdminDashboard = () => {
                   <span style={{ color: 'var(--primary-green)' }}>✅ Active</span> : 
                   <span style={{ color: '#ef4444' }}>❌ Inactive</span>
                 }
+                <div style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                  Approval: <span style={{ 
+                    color: (product.approvalStatus || 'pending') === 'approved' 
+                      ? 'var(--primary-green)' 
+                      : (product.approvalStatus || 'pending') === 'rejected'
+                      ? '#ef4444'
+                      : '#f59e0b'
+                  }}>
+                    {(product.approvalStatus || 'pending').charAt(0).toUpperCase() + 
+                     (product.approvalStatus || 'pending').slice(1)}
+                  </span>
+                </div>
                 {product.isOrganic && product.organicCertificate?.status === 'pending' && (
                   <div style={{ fontSize: '0.75rem', color: '#f59e0b', marginTop: '0.25rem' }}>
                     ⏳ Organic Review Pending
@@ -867,6 +1000,7 @@ const AdminDashboard = () => {
         onToggleStatus={handleToggleProductStatus}
         onDelete={handleDeleteProduct}
         onApproveOrganic={handleApproveOrganic}
+        onApproveProduct={handleApproveProduct}
       />
     </Container>
   );

@@ -204,23 +204,32 @@ const LocationModal = ({ isOpen, onClose, onLocationSet }) => {
     }
   };
 
-  const handleZipCodeSubmit = (e) => {
+  const handleZipCodeSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
     
     if (!zipCode.trim()) {
       setError('Please enter a zip code');
+      setLoading(false);
       return;
     }
     
     if (!locationService.isValidZipCode(zipCode)) {
       setError('Please enter a valid 5-digit zip code');
+      setLoading(false);
       return;
     }
     
-    locationService.setUserZipCode(zipCode);
-    onLocationSet(zipCode, 'manual');
-    onClose();
+    try {
+      const locationData = await locationService.setUserZipCode(zipCode);
+      onLocationSet(locationData.zipCode, 'manual', locationData);
+      onClose();
+    } catch (error) {
+      setError('Could not find location for this zip code');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSkip = () => {

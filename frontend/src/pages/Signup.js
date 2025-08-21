@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { lookupZipCode } from '../services/zipCodeService';
 import styled from 'styled-components';
 
 const SignupContainer = styled.div`
@@ -199,7 +200,9 @@ const Signup = () => {
       street: '',
       city: '',
       state: '',
-      zipCode: ''
+      zipCode: '',
+      latitude: null,
+      longitude: null
     }
   });
   const [error, setError] = useState('');
@@ -235,6 +238,28 @@ const Signup = () => {
       ...formData,
       role
     });
+  };
+
+  const handleZipCodeLookup = async (zipCode) => {
+    if (zipCode.length === 5) {
+      try {
+        const locationData = await lookupZipCode(zipCode);
+        setFormData({
+          ...formData,
+          address: {
+            ...formData.address,
+            zipCode: locationData.zipCode,
+            city: locationData.city,
+            state: locationData.state,
+            latitude: locationData.latitude,
+            longitude: locationData.longitude
+          }
+        });
+      } catch (error) {
+        console.error('Zip code lookup failed:', error);
+        // Don't clear the fields, just leave them as is
+      }
+    }
   };
 
   const validatePassword = (password) => {
@@ -489,7 +514,37 @@ const Signup = () => {
             </>
           )}
 
+          <FormGroup>
+            <label htmlFor="address.street">Street Address</label>
+            <input
+              type="text"
+              id="address.street"
+              name="address.street"
+              value={formData.address.street}
+              onChange={handleChange}
+              required={formData.role === 'merchant'}
+              placeholder="123 Main Street"
+            />
+          </FormGroup>
+
           <FormRow>
+            <FormGroup>
+              <label htmlFor="address.zipCode">ZIP Code</label>
+              <input
+                type="text"
+                id="address.zipCode"
+                name="address.zipCode"
+                value={formData.address.zipCode}
+                onChange={(e) => {
+                  handleChange(e);
+                  handleZipCodeLookup(e.target.value);
+                }}
+                required={formData.role === 'merchant'}
+                placeholder="12345"
+                maxLength="5"
+              />
+            </FormGroup>
+
             <FormGroup>
               <label htmlFor="address.city">City</label>
               <input
@@ -498,19 +553,24 @@ const Signup = () => {
                 name="address.city"
                 value={formData.address.city}
                 onChange={handleChange}
+                required={formData.role === 'merchant'}
                 placeholder="Your city"
+                readOnly={formData.address.city && formData.address.zipCode.length === 5}
               />
             </FormGroup>
 
             <FormGroup>
-              <label htmlFor="address.zipCode">ZIP Code</label>
+              <label htmlFor="address.state">State</label>
               <input
                 type="text"
-                id="address.zipCode"
-                name="address.zipCode"
-                value={formData.address.zipCode}
+                id="address.state"
+                name="address.state"
+                value={formData.address.state}
                 onChange={handleChange}
-                placeholder="12345"
+                required={formData.role === 'merchant'}
+                placeholder="NY"
+                maxLength="2"
+                readOnly={formData.address.state && formData.address.zipCode.length === 5}
               />
             </FormGroup>
           </FormRow>

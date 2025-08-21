@@ -46,7 +46,20 @@ const signup = async (req, res) => {
     }
 
     if (address) {
-      userData.address = address;
+      userData.address = {
+        street: address.street,
+        city: address.city,
+        state: address.state,
+        zipCode: address.zipCode
+      };
+      
+      // Set location coordinates if provided
+      if (address.latitude && address.longitude) {
+        userData.location = {
+          type: 'Point',
+          coordinates: [address.longitude, address.latitude] // [lng, lat] format for MongoDB
+        };
+      }
     }
 
     console.log('Creating user with data:', userData);

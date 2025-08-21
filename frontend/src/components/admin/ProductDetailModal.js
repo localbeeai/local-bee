@@ -242,7 +242,8 @@ const ProductDetailModal = ({
   onClose, 
   onToggleStatus, 
   onDelete, 
-  onApproveOrganic 
+  onApproveOrganic,
+  onApproveProduct
 }) => {
   const [reason, setReason] = useState('');
   const [showReasonInput, setShowReasonInput] = useState(false);
@@ -261,6 +262,18 @@ const ProductDetailModal = ({
       await onApproveOrganic(
         product._id, 
         action === 'organic-approve' ? 'approved' : 'rejected',
+        reason
+      );
+    } else if (action === 'product-approve' || action === 'product-reject') {
+      if (action === 'product-reject' && !reason.trim()) {
+        setActionType(action);
+        setShowReasonInput(true);
+        return;
+      }
+      
+      await onApproveProduct(
+        product._id,
+        action === 'product-approve',
         reason
       );
     } else if (action === 'toggle') {
@@ -333,6 +346,15 @@ const ProductDetailModal = ({
                 <div className="value">
                   <StatusBadge className={product.isActive ? 'active' : 'inactive'}>
                     {product.isActive ? 'Active' : 'Inactive'}
+                  </StatusBadge>
+                </div>
+              </InfoItem>
+              <InfoItem>
+                <div className="label">Approval Status</div>
+                <div className="value">
+                  <StatusBadge className={product.approvalStatus || 'pending'}>
+                    {(product.approvalStatus || 'pending').charAt(0).toUpperCase() + 
+                     (product.approvalStatus || 'pending').slice(1)}
                   </StatusBadge>
                 </div>
               </InfoItem>
@@ -544,13 +566,15 @@ const ProductDetailModal = ({
           {showReasonInput && (
             <Section>
               <h3>
-                {actionType === 'organic-reject' ? 'Rejection Reason' : 'Review Notes'} 
-                {actionType === 'organic-reject' && <span style={{ color: '#ef4444' }}> *</span>}
+                {(actionType === 'organic-reject' || actionType === 'product-reject') ? 'Rejection Reason' : 'Review Notes'} 
+                {(actionType === 'organic-reject' || actionType === 'product-reject') && <span style={{ color: '#ef4444' }}> *</span>}
               </h3>
               <TextArea
                 placeholder={
                   actionType === 'organic-reject' 
                     ? 'Please provide a reason for rejecting the organic certificate...' 
+                    : actionType === 'product-reject'
+                    ? 'Please provide a reason for rejecting this product...'
                     : 'Optional review notes...'
                 }
                 value={reason}
@@ -561,6 +585,25 @@ const ProductDetailModal = ({
         </Content>
 
         <ActionSection>
+          {/* Product Approval Actions */}
+          {(product.approvalStatus || 'pending') === 'pending' && (
+            <>
+              <Button 
+                className="primary" 
+                onClick={() => handleAction('product-approve')}
+              >
+                ✅ Approve Product
+              </Button>
+              <Button 
+                className="danger" 
+                onClick={() => handleAction('product-reject')}
+              >
+                ❌ Reject Product
+              </Button>
+            </>
+          )}
+
+          {/* Organic Certificate Approval Actions */}
           {product.isOrganic && product.organicCertificate?.status === 'pending' && (
             <>
               <Button 
@@ -582,9 +625,9 @@ const ProductDetailModal = ({
             <Button 
               className="primary" 
               onClick={() => handleAction(actionType)}
-              disabled={actionType === 'organic-reject' && !reason.trim()}
+              disabled={(actionType === 'organic-reject' || actionType === 'product-reject') && !reason.trim()}
             >
-              Confirm {actionType === 'organic-reject' ? 'Rejection' : 'Action'}
+              Confirm {(actionType === 'organic-reject' || actionType === 'product-reject') ? 'Rejection' : 'Action'}
             </Button>
           )}
           

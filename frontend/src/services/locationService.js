@@ -1,7 +1,10 @@
+import { lookupZipCode } from './zipCodeService';
+
 class LocationService {
   constructor() {
     this.currentLocation = null;
     this.userZipCode = localStorage.getItem('userZipCode') || null;
+    this.userLocation = JSON.parse(localStorage.getItem('userLocation') || 'null');
     this.locationPermission = localStorage.getItem('locationPermission') || null;
   }
 
@@ -83,12 +86,31 @@ class LocationService {
     return zipCodeRegex.test(zipCode);
   }
 
-  // Set user's zip code
-  setUserZipCode(zipCode) {
+  // Set user's zip code and fetch location data
+  async setUserZipCode(zipCode) {
     if (this.isValidZipCode(zipCode)) {
-      this.userZipCode = zipCode;
-      localStorage.setItem('userZipCode', zipCode);
-      return true;
+      try {
+        const locationData = await lookupZipCode(zipCode);
+        this.userZipCode = locationData.zipCode;
+        this.userLocation = {
+          zipCode: locationData.zipCode,
+          city: locationData.city,
+          state: locationData.state,
+          latitude: locationData.latitude,
+          longitude: locationData.longitude
+        };
+        
+        localStorage.setItem('userZipCode', this.userZipCode);
+        localStorage.setItem('userLocation', JSON.stringify(this.userLocation));
+        
+        return this.userLocation;
+      } catch (error) {
+        console.error('Failed to lookup zip code:', error);
+        // Still store the zip code even if lookup fails
+        this.userZipCode = zipCode;
+        localStorage.setItem('userZipCode', zipCode);
+        return { zipCode, city: null, state: null };
+      }
     }
     return false;
   }
@@ -96,6 +118,11 @@ class LocationService {
   // Get user's zip code
   getUserZipCode() {
     return this.userZipCode;
+  }
+
+  // Get user's full location data
+  getUserLocation() {
+    return this.userLocation;
   }
 
   // Get location permission status
