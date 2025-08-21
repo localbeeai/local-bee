@@ -84,4 +84,53 @@ router.post('/:id/reviews', [
     .withMessage('Comment cannot exceed 500 characters')
 ], addReview);
 
+// Resubmit product for approval (merchant action)
+router.put('/:id/resubmit', auth, async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    // Check if user is the merchant who owns this product
+    if (product.merchant.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to resubmit this product' });
+    }
+
+    // Only allow resubmission if product is rejected
+    if (product.approvalStatus !== 'rejected') {
+      return res.status(400).json({ message: 'Product must be rejected before resubmission' });
+    }
+
+    // Update status to resubmitted (which will put it back in admin queue)
+    product.approvalStatus = 'resubmitted';
+    product.resubmissionCount = (product.resubmissionCount || 0) + 1;
+    product.rejectionReason = undefined; // Clear rejection reason
+    
+    // Add to approval history
+    product.approvalHistory.push({
+      status: 'resubmitted',
+      reviewedBy: req.user._id,
+      reviewedAt: new Date(),
+      notes: `Product resubmitted by merchant (attempt #${product.resubmissionCount})`
+    });
+
+    await product.save();
+
+    res.json({ 
+      message: 'Product resubmitted for review successfully',
+      product: {
+        _id: product._id,
+        name: product.name,
+        approvalStatus: product.approvalStatus,
+        resubmissionCount: product.resubmissionCount
+      }
+    });
+  } catch (error) {
+    console.error('Resubmit product error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;

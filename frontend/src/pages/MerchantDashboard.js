@@ -842,6 +842,19 @@ const MerchantDashboard = () => {
     }
   };
 
+  const handleResubmitProduct = async (productId) => {
+    if (window.confirm('Are you sure you want to resubmit this product for review? Make sure you have addressed the feedback provided.')) {
+      try {
+        await axios.put(`/api/products/${productId}/resubmit`);
+        fetchProducts();
+        alert('Product resubmitted for review successfully! We will review it again soon.');
+      } catch (error) {
+        console.error('Error resubmitting product:', error);
+        alert(error.response?.data?.message || 'Error resubmitting product');
+      }
+    }
+  };
+
   const handleCancelEdit = () => {
     setEditingProduct(null);
     setProductForm({
@@ -1169,6 +1182,39 @@ const MerchantDashboard = () => {
                       }
                     </div>
                   )}
+                  <div style={{
+                    fontSize: '0.75rem',
+                    padding: '0.25rem 0.5rem',
+                    borderRadius: '0.25rem',
+                    marginTop: '0.25rem',
+                    background: (product.approvalStatus || 'pending') === 'approved' ? 'var(--primary-green)' :
+                               (product.approvalStatus || 'pending') === 'pending' ? '#f59e0b' :
+                               (product.approvalStatus || 'pending') === 'resubmitted' ? '#3b82f6' :
+                               '#ef4444',
+                    color: 'white',
+                    fontWeight: '600',
+                    textAlign: 'center'
+                  }}>
+                    📋 Status: {
+                      (product.approvalStatus || 'pending') === 'approved' ? 'Live' :
+                      (product.approvalStatus || 'pending') === 'pending' ? 'Pending Review' :
+                      (product.approvalStatus || 'pending') === 'resubmitted' ? 'Under Review' :
+                      'Needs Changes'
+                    }
+                  </div>
+                  {(product.approvalStatus === 'rejected' && product.rejectionReason) && (
+                    <div style={{
+                      fontSize: '0.75rem',
+                      color: '#ef4444',
+                      marginTop: '0.25rem',
+                      padding: '0.25rem',
+                      background: '#fef2f2',
+                      borderRadius: '0.25rem',
+                      border: '1px solid #fecaca'
+                    }}>
+                      <strong>Feedback:</strong> {product.rejectionReason}
+                    </div>
+                  )}
                   <div style={{fontSize: '0.75rem', color: 'var(--text-light)'}}>
                     {product.views} views • {product.rating.count} reviews
                   </div>
@@ -1180,6 +1226,24 @@ const MerchantDashboard = () => {
                   >
                     Edit
                   </button>
+                  {product.approvalStatus === 'rejected' && (
+                    <button 
+                      className="resubmit"
+                      onClick={() => handleResubmitProduct(product._id)}
+                      style={{
+                        background: '#3b82f6',
+                        color: 'white',
+                        border: 'none',
+                        padding: '0.5rem 1rem',
+                        borderRadius: '0.5rem',
+                        cursor: 'pointer',
+                        fontSize: '0.875rem',
+                        fontWeight: '500'
+                      }}
+                    >
+                      Resubmit
+                    </button>
+                  )}
                   <button 
                     className="delete"
                     onClick={() => handleDeleteProduct(product._id)}

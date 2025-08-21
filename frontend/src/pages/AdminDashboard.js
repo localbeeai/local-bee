@@ -840,25 +840,34 @@ const AdminDashboard = () => {
               <div>{product.merchant?.businessInfo?.businessName || product.merchant?.name}</div>
               <div>${product.price}</div>
               <div>
-                {product.isActive ? 
-                  <span style={{ color: 'var(--primary-green)' }}>✅ Active</span> : 
-                  <span style={{ color: '#ef4444' }}>❌ Inactive</span>
-                }
-                <div style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
-                  Approval: <span style={{ 
+                <div style={{ fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                  Status: <span style={{ 
                     color: (product.approvalStatus || 'pending') === 'approved' 
                       ? 'var(--primary-green)' 
                       : (product.approvalStatus || 'pending') === 'rejected'
                       ? '#ef4444'
-                      : '#f59e0b'
+                      : (product.approvalStatus || 'pending') === 'resubmitted'
+                      ? '#3b82f6'
+                      : '#f59e0b',
+                    fontWeight: '600'
                   }}>
-                    {(product.approvalStatus || 'pending').charAt(0).toUpperCase() + 
-                     (product.approvalStatus || 'pending').slice(1)}
+                    {(product.approvalStatus || 'pending') === 'approved' ? '✅ Live' :
+                     (product.approvalStatus || 'pending') === 'rejected' ? '❌ Rejected' :
+                     (product.approvalStatus || 'pending') === 'resubmitted' ? '🔄 Resubmitted' :
+                     '⏳ Pending'}
                   </span>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>
+                  Product: {product.isActive ? 'Active' : 'Inactive'}
                 </div>
                 {product.isOrganic && product.organicCertificate?.status === 'pending' && (
                   <div style={{ fontSize: '0.75rem', color: '#f59e0b', marginTop: '0.25rem' }}>
                     ⏳ Organic Review Pending
+                  </div>
+                )}
+                {product.approvalStatus === 'rejected' && product.rejectionReason && (
+                  <div style={{ fontSize: '0.75rem', color: '#ef4444', marginTop: '0.25rem', fontStyle: 'italic' }}>
+                    Reason: {product.rejectionReason.substring(0, 50)}...
                   </div>
                 )}
               </div>

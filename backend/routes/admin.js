@@ -28,7 +28,7 @@ router.get('/stats', auth, admin, async (req, res) => {
     });
     
     const pendingProducts = await Product.countDocuments({
-      approvalStatus: 'pending'
+      approvalStatus: { $in: ['pending', 'resubmitted'] }
     });
 
     // Recent activity
@@ -193,36 +193,55 @@ router.put('/users/:id/approve', auth, admin, async (req, res) => {
 router.put('/products/:id/approve', auth, admin, async (req, res) => {
   try {
     const { approved, reason } = req.body;
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findById(req.params.id).populate('merchant', 'name email businessInfo.businessName');
 
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    product.approvalStatus = approved ? 'approved' : 'rejected';
-    if (reason) product.rejectionReason = reason;
+    // Update product status
+    const newStatus = approved ? 'approved' : 'rejected';
+    product.approvalStatus = newStatus;
+    
     if (approved) {
       product.approvedAt = new Date();
       product.approvedBy = req.user._id;
+      product.rejectionReason = undefined; // Clear any previous rejection reason
+    } else {
+      product.rejectedAt = new Date();
+      product.rejectionReason = reason || 'Product did not meet our requirements';
     }
+
+    // Add to approval history
+    product.approvalHistory.push({
+      status: newStatus,
+      reason: reason,
+      reviewedBy: req.user._id,
+      reviewedAt: new Date(),
+      notes: `Product ${approved ? 'approved' : 'rejected'} by admin`
+    });
 
     await product.save();
 
     // Send email notification to merchant
     try {
-      const populatedProduct = await Product.findById(product._id).populate('merchant', 'name email');
-      if (populatedProduct.merchant) {
+      const { sendEmail } = require('../services/emailService');
+      
+      if (product.merchant) {
+        const merchantName = product.merchant.name;
+        const businessName = product.merchant.businessInfo?.businessName;
+        
         if (approved) {
           await sendEmail(
-            populatedProduct.merchant.email,
+            product.merchant.email,
             'productApproved',
-            [populatedProduct.merchant.name, populatedProduct.name]
+            [merchantName, product.name, businessName]
           );
         } else {
           await sendEmail(
-            populatedProduct.merchant.email,
+            product.merchant.email,
             'productRejected',
-            [populatedProduct.merchant.name, populatedProduct.name, reason || 'Product did not meet our requirements']
+            [merchantName, product.name, reason || 'Product did not meet our requirements', businessName]
           );
         }
       }
@@ -231,7 +250,15 @@ router.put('/products/:id/approve', auth, admin, async (req, res) => {
       // Don't fail the approval process if email fails
     }
 
-    res.json({ message: `Product ${approved ? 'approved' : 'rejected'} successfully` });
+    res.json({ 
+      message: `Product ${approved ? 'approved' : 'rejected'} successfully`,
+      product: {
+        _id: product._id,
+        name: product.name,
+        approvalStatus: product.approvalStatus,
+        rejectionReason: product.rejectionReason
+      }
+    });
   } catch (error) {
     console.error('Approve product error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -387,7 +414,7 @@ router.get('/pending', auth, admin, async (req, res) => {
     }).populate('merchant', 'name businessInfo.businessName email');
 
     const pendingProducts = await Product.find({
-      approvalStatus: 'pending'
+      approvalStatus: { $in: ['pending', 'resubmitted'] }
     }).populate('merchant', 'name businessInfo.businessName email');
 
     res.json({

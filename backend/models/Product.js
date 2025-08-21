@@ -197,7 +197,7 @@ const productSchema = new mongoose.Schema({
   },
   approvalStatus: {
     type: String,
-    enum: ['pending', 'approved', 'rejected'],
+    enum: ['pending', 'approved', 'rejected', 'resubmitted'],
     default: 'pending'
   },
   approvedAt: Date,
@@ -205,7 +205,28 @@ const productSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
+  rejectedAt: Date,
   rejectionReason: String,
+  resubmissionCount: {
+    type: Number,
+    default: 0
+  },
+  approvalHistory: [{
+    status: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected', 'resubmitted']
+    },
+    reason: String,
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    reviewedAt: {
+      type: Date,
+      default: Date.now
+    },
+    notes: String
+  }],
   views: {
     type: Number,
     default: 0
