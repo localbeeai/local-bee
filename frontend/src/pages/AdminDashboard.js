@@ -339,6 +339,19 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleApproveProduct = async (productId, approved, reason = '') => {
+    try {
+      await axios.put(`/api/admin/products/${productId}/approve`, { 
+        approved, 
+        reason 
+      });
+      fetchAdminData();
+    } catch (error) {
+      console.error('Error approving product:', error);
+      alert('Failed to update product approval status');
+    }
+  };
+
   const handleToggleUserStatus = async (userId, currentStatus) => {
     const action = currentStatus ? 'deactivate' : 'reactivate';
     if (!window.confirm(`Are you sure you want to ${action} this user?`)) return;
@@ -490,79 +503,6 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Bulk action error:', error);
       alert('Some actions failed. Please try again.');
-    }
-  };
-
-  // Action handlers
-  const handleApproveMerchant = async (userId, approved, reason = '') => {
-    try {
-      await axios.put(`/api/admin/users/${userId}/approve`, { approved, reason });
-      fetchAdminData();
-    } catch (error) {
-      console.error('Error approving merchant:', error);
-      alert('Failed to update merchant status');
-    }
-  };
-
-  const handleToggleUserStatus = async (userId, currentStatus) => {
-    try {
-      if (currentStatus) {
-        await axios.delete(`/api/admin/users/${userId}`);
-      } else {
-        await axios.put(`/api/admin/users/${userId}/reactivate`);
-      }
-      fetchAdminData();
-    } catch (error) {
-      console.error('Error toggling user status:', error);
-      alert('Failed to update user status');
-    }
-  };
-
-  const handleToggleProductStatus = async (productId, currentStatus) => {
-    try {
-      await axios.put(`/api/admin/products/${productId}/toggle-status`, { 
-        isActive: !currentStatus 
-      });
-      fetchAdminData();
-    } catch (error) {
-      console.error('Error toggling product status:', error);
-      alert('Failed to update product status');
-    }
-  };
-
-  const handleDeleteProduct = async (productId) => {
-    try {
-      await axios.delete(`/api/admin/products/${productId}`);
-      fetchAdminData();
-    } catch (error) {
-      console.error('Error deleting product:', error);
-      alert('Failed to delete product');
-    }
-  };
-
-  const handleApproveOrganic = async (productId, status, reason = '') => {
-    try {
-      await axios.put(`/api/admin/products/${productId}/organic-certificate`, { 
-        status, 
-        reason 
-      });
-      fetchAdminData();
-    } catch (error) {
-      console.error('Error updating organic certificate:', error);
-      alert('Failed to update organic certificate status');
-    }
-  };
-
-  const handleApproveProduct = async (productId, approved, reason = '') => {
-    try {
-      await axios.put(`/api/admin/products/${productId}/approve`, { 
-        approved, 
-        reason 
-      });
-      fetchAdminData();
-    } catch (error) {
-      console.error('Error approving product:', error);
-      alert('Failed to update product approval status');
     }
   };
 
