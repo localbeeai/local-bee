@@ -697,7 +697,11 @@ const AdminDashboard = () => {
                       </Button>
                       <Button 
                         className="approve" 
-                        onClick={() => handleApproveProduct(product._id, true)}
+                        onClick={() => {
+                          if (window.confirm(`Are you sure you want to approve "${product.name}"? This will make it live on the marketplace immediately.`)) {
+                            handleApproveProduct(product._id, true);
+                          }
+                        }}
                         style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
                       >
                         Quick Approve

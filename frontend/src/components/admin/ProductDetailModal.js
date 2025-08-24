@@ -572,6 +572,62 @@ const ProductDetailModal = ({
             </Section>
           )}
 
+          {/* Approval History */}
+          {product.approvalHistory && product.approvalHistory.length > 0 && (
+            <Section>
+              <h3>Approval History</h3>
+              {product.approvalHistory
+                .sort((a, b) => new Date(b.reviewedAt) - new Date(a.reviewedAt))
+                .map((history, index) => (
+                <div key={index} style={{
+                  background: '#f8fafc',
+                  border: '1px solid var(--border-light)',
+                  borderRadius: '0.5rem',
+                  padding: '1rem',
+                  marginBottom: '1rem'
+                }}>
+                  <InfoGrid>
+                    <InfoItem>
+                      <div className="label">Action</div>
+                      <div className="value">
+                        <StatusBadge className={history.status}>
+                          {history.status.charAt(0).toUpperCase() + history.status.slice(1)}
+                        </StatusBadge>
+                      </div>
+                    </InfoItem>
+                    <InfoItem>
+                      <div className="label">Date</div>
+                      <div className="value">
+                        {history.reviewedAt ? new Date(history.reviewedAt).toLocaleString() : 'N/A'}
+                      </div>
+                    </InfoItem>
+                  </InfoGrid>
+                  
+                  {history.reason && (
+                    <InfoItem style={{ marginTop: '0.5rem' }}>
+                      <div className="label">Feedback/Reason</div>
+                      <div className="value" style={{ 
+                        fontStyle: 'italic',
+                        color: history.status === 'rejected' ? '#dc2626' : 'var(--text-dark)'
+                      }}>
+                        {history.reason}
+                      </div>
+                    </InfoItem>
+                  )}
+                  
+                  {history.notes && (
+                    <InfoItem style={{ marginTop: '0.5rem' }}>
+                      <div className="label">Notes</div>
+                      <div className="value" style={{ fontSize: '0.875rem', color: 'var(--text-light)' }}>
+                        {history.notes}
+                      </div>
+                    </InfoItem>
+                  )}
+                </div>
+              ))}
+            </Section>
+          )}
+
           {/* Action Reason Input */}
           {showReasonInput && (
             <Section>
@@ -600,13 +656,21 @@ const ProductDetailModal = ({
             <>
               <Button 
                 className="primary" 
-                onClick={() => handleAction('product-approve')}
+                onClick={() => {
+                  if (window.confirm('Are you sure you want to approve this product? This will make it live on the marketplace.')) {
+                    handleAction('product-approve');
+                  }
+                }}
               >
                 ✅ Approve Product
               </Button>
               <Button 
                 className="danger" 
-                onClick={() => handleAction('product-reject')}
+                onClick={() => {
+                  if (window.confirm('Are you sure you want to reject this product? The merchant will be notified and can resubmit after making changes.')) {
+                    handleAction('product-reject');
+                  }
+                }}
               >
                 ❌ Reject Product
               </Button>
@@ -619,13 +683,21 @@ const ProductDetailModal = ({
               <>
                 <Button 
                   className="primary" 
-                  onClick={() => handleAction('organic-approve')}
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to approve this organic certificate? This will mark the product as certified organic.')) {
+                      handleAction('organic-approve');
+                    }
+                  }}
                 >
                   ✅ Approve Certificate
                 </Button>
                 <Button 
                   className="danger" 
-                  onClick={() => handleAction('organic-reject')}
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to reject this organic certificate? The merchant will be notified and can resubmit a new certificate.')) {
+                      handleAction('organic-reject');
+                    }
+                  }}
                 >
                   ❌ Reject Certificate
                 </Button>

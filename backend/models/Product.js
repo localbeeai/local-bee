@@ -70,7 +70,7 @@ const productSchema = new mongoose.Schema({
     originalName: String,
     status: {
       type: String,
-      enum: ['pending', 'approved', 'rejected'],
+      enum: ['pending', 'approved', 'rejected', 'resubmitted'],
       default: 'pending'
     },
     reason: String,
