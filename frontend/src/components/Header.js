@@ -386,18 +386,20 @@ const Header = () => {
                   </DropdownButton>
                   
                   <DropdownMenu $isOpen={dropdownOpen}>
-                    <Link 
-                      to={
-                        user.role === 'admin' ? '/dashboard/admin' :
-                        user.role === 'merchant' ? '/dashboard/merchant' : 
-                        '/dashboard/customer'
-                      }
+                    <button 
                       className="dropdown-item"
-                      onClick={() => setDropdownOpen(false)}
+                      onClick={() => {
+                        const dashboardPath = 
+                          user.role === 'admin' ? '/dashboard/admin' :
+                          user.role === 'merchant' ? '/dashboard/merchant' : 
+                          '/dashboard/customer';
+                        navigate(dashboardPath);
+                        setDropdownOpen(false);
+                      }}
                     >
                       <BuildingStorefrontIcon className="icon" />
                       {user.role === 'admin' ? 'Admin Panel' : 'Dashboard'}
-                    </Link>
+                    </button>
                     
                     {user.role === 'merchant' && (
                       <Link 
