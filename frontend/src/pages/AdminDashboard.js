@@ -673,8 +673,13 @@ const AdminDashboard = () => {
                 </TableRow>
                 {pendingApprovals.pendingProducts.map(product => (
                   <TableRow key={product._id} columns="2fr 1fr 1fr 2fr">
-                    <div>
-                      <strong>{product.name}</strong>
+                    <div 
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => openProductModal(product)}
+                    >
+                      <strong style={{ color: 'var(--primary-green)', textDecoration: 'underline' }}>
+                        {product.name}
+                      </strong>
                       <br />
                       <small style={{ color: 'var(--text-light)' }}>
                         ${product.price} • {product.category}
@@ -684,18 +689,18 @@ const AdminDashboard = () => {
                     <div>{new Date(product.createdAt).toLocaleDateString()}</div>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       <Button 
+                        className="secondary"
+                        onClick={() => openProductModal(product)}
+                        style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                      >
+                        👁️ Review
+                      </Button>
+                      <Button 
                         className="approve" 
                         onClick={() => handleApproveProduct(product._id, true)}
                         style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
                       >
-                        Approve
-                      </Button>
-                      <Button 
-                        className="reject" 
-                        onClick={() => handleApproveProduct(product._id, false)}
-                        style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
-                      >
-                        Reject
+                        Quick Approve
                       </Button>
                     </div>
                   </TableRow>

@@ -174,11 +174,25 @@ const NotificationBell = () => {
 
   const fetchNotifications = async () => {
     try {
-      const [messagesResponse] = await Promise.all([
-        axios.get('/api/messages/notifications')
+      const [notificationsResponse, messagesResponse] = await Promise.all([
+        axios.get('/api/notifications').catch(() => ({ data: { notifications: [] } })),
+        axios.get('/api/messages/notifications').catch(() => ({ data: [] }))
       ]);
 
-      const messageNotifications = messagesResponse.data.map(message => ({
+      // Format system notifications (product approval/rejection, etc.)
+      const systemNotifications = (notificationsResponse.data.notifications || []).map(notification => ({
+        id: notification._id,
+        type: notification.type,
+        title: notification.title,
+        message: notification.message,
+        time: new Date(notification.createdAt).toLocaleString(),
+        unread: !notification.read,
+        icon: getNotificationIcon(notification.type),
+        data: notification
+      }));
+
+      // Format message notifications
+      const messageNotifications = (messagesResponse.data || []).map(message => ({
         id: `message_${message._id}`,
         type: 'message',
         title: 'New Message',
@@ -190,6 +204,7 @@ const NotificationBell = () => {
       }));
 
       const allNotifications = [
+        ...systemNotifications,
         ...messageNotifications
       ].sort((a, b) => new Date(b.data?.createdAt || 0) - new Date(a.data?.createdAt || 0));
 
@@ -205,9 +220,26 @@ const NotificationBell = () => {
     }
   };
 
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case 'product_approved': return '✅';
+      case 'product_rejected': return '📋';
+      case 'organic_approved': return '🌱';
+      case 'organic_rejected': return '⚠️';
+      case 'order_status': return '📦';
+      case 'merchant_approved': return '🎉';
+      case 'merchant_rejected': return '📄';
+      default: return '📢';
+    }
+  };
+
   const markAllAsRead = async () => {
     try {
+      // Mark system notifications as read
+      await axios.put('/api/notifications/read-all');
+      // Mark message notifications as read
       await axios.put('/api/messages/mark-all-read');
+      
       setNotifications(notifications.map(n => ({ ...n, unread: false })));
       setUnreadCount(0);
     } catch (error) {
@@ -217,8 +249,14 @@ const NotificationBell = () => {
 
   const handleNotificationClick = async (notification) => {
     try {
-      if (notification.unread && notification.type === 'message') {
-        await axios.put(`/api/messages/${notification.data._id}/read`);
+      if (notification.unread) {
+        if (notification.type === 'message') {
+          await axios.put(`/api/messages/${notification.data._id}/read`);
+        } else {
+          // System notification (product approval/rejection, etc.)
+          await axios.put(`/api/notifications/${notification.data._id}/read`);
+        }
+        
         setNotifications(notifications.map(n => 
           n.id === notification.id ? { ...n, unread: false } : n
         ));
@@ -227,14 +265,22 @@ const NotificationBell = () => {
 
       // Navigate to relevant page based on notification type
       switch (notification.type) {
-        case 'order':
+        case 'product_approved':
+        case 'product_rejected':
+        case 'organic_approved':
+        case 'organic_rejected':
+          // Navigate to merchant dashboard to see product status
+          window.location.href = '/dashboard/merchant';
+          break;
+        case 'merchant_approved':
+        case 'merchant_rejected':
+          window.location.href = '/dashboard/merchant';
+          break;
+        case 'order_status':
           window.location.href = '/dashboard?tab=orders';
           break;
         case 'message':
           window.location.href = '/messages';
-          break;
-        case 'review':
-          window.location.href = '/dashboard?tab=products';
           break;
         default:
           break;

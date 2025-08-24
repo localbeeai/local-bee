@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
 const { sendEmail } = require('../services/emailService');
+const { notifyProductStatus } = require('../services/notificationService');
 
 const router = express.Router();
 
@@ -223,31 +224,12 @@ router.put('/products/:id/approve', auth, admin, async (req, res) => {
 
     await product.save();
 
-    // Send email notification to merchant
+    // Send comprehensive notification (email + in-app)
     try {
-      const { sendEmail } = require('../services/emailService');
-      
-      if (product.merchant) {
-        const merchantName = product.merchant.name;
-        const businessName = product.merchant.businessInfo?.businessName;
-        
-        if (approved) {
-          await sendEmail(
-            product.merchant.email,
-            'productApproved',
-            [merchantName, product.name, businessName]
-          );
-        } else {
-          await sendEmail(
-            product.merchant.email,
-            'productRejected',
-            [merchantName, product.name, reason || 'Product did not meet our requirements', businessName]
-          );
-        }
-      }
-    } catch (emailError) {
-      console.error('Email notification failed:', emailError);
-      // Don't fail the approval process if email fails
+      await notifyProductStatus(product, approved, reason);
+    } catch (notificationError) {
+      console.error('Notification failed:', notificationError);
+      // Don't fail the approval process if notification fails
     }
 
     res.json({ 
