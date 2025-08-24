@@ -341,7 +341,7 @@ const Header = () => {
       <MainHeader>
         <Nav>
           <Logo to="/">
-            🌱 LocalMarket
+            🐝 Local Bee
           </Logo>
 
           <SearchBar>

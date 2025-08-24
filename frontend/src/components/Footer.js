@@ -64,7 +64,7 @@ const Footer = () => {
     <FooterContainer>
       <FooterContent>
         <FooterSection>
-          <h3>🌱 LocalMarket</h3>
+          <h3>🐝 Local Bee</h3>
           <p>
             Supporting local businesses and connecting communities through fresh, 
             locally-sourced products and artisan goods.
@@ -109,7 +109,7 @@ const Footer = () => {
       </FooterContent>
       
       <FooterBottom>
-        <p>&copy; 2024 LocalMarket. All rights reserved. | Privacy Policy | Terms of Service</p>
+        <p>&copy; 2024 Local Bee. All rights reserved. | Privacy Policy | Terms of Service</p>
       </FooterBottom>
     </FooterContainer>
   );
