@@ -25,7 +25,7 @@ router.get('/stats', auth, admin, async (req, res) => {
     
     const pendingOrganic = await Product.countDocuments({
       isOrganic: true,
-      'organicCertificate.status': 'pending'
+      'organicCertificate.status': { $in: ['pending', 'resubmitted'] }
     });
     
     const pendingProducts = await Product.countDocuments({
@@ -392,7 +392,7 @@ router.get('/pending', auth, admin, async (req, res) => {
 
     const pendingOrganic = await Product.find({
       isOrganic: true,
-      'organicCertificate.status': 'pending'
+      'organicCertificate.status': { $in: ['pending', 'resubmitted'] }
     }).populate('merchant', 'name businessInfo.businessName email');
 
     const pendingProducts = await Product.find({

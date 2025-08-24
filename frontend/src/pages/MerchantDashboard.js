@@ -855,6 +855,19 @@ const MerchantDashboard = () => {
     }
   };
 
+  const handleResubmitOrganic = async (productId) => {
+    if (window.confirm('Are you sure you want to resubmit the organic certificate for review? Make sure you have addressed the feedback provided.')) {
+      try {
+        await axios.put(`/api/products/${productId}/resubmit-organic`);
+        fetchProducts();
+        alert('Organic certificate resubmitted for review successfully! We will review it again soon.');
+      } catch (error) {
+        console.error('Error resubmitting organic certificate:', error);
+        alert(error.response?.data?.message || 'Error resubmitting organic certificate');
+      }
+    }
+  };
+
   const handleCancelEdit = () => {
     setEditingProduct(null);
     setProductForm({
@@ -1170,6 +1183,7 @@ const MerchantDashboard = () => {
                       marginTop: '0.25rem',
                       background: product.organicCertificate?.status === 'approved' ? 'var(--primary-green)' :
                                  product.organicCertificate?.status === 'pending' ? '#f59e0b' :
+                                 product.organicCertificate?.status === 'resubmitted' ? '#3b82f6' :
                                  product.organicCertificate?.status === 'rejected' ? '#ef4444' : '#6b7280',
                       color: 'white',
                       fontWeight: '600',
@@ -1178,6 +1192,7 @@ const MerchantDashboard = () => {
                       🌱 Organic: {
                         product.organicCertificate?.status === 'approved' ? 'Certified' :
                         product.organicCertificate?.status === 'pending' ? 'Under Review' :
+                        product.organicCertificate?.status === 'resubmitted' ? 'Under Review' :
                         product.organicCertificate?.status === 'rejected' ? 'Rejected' : 'Awaiting Certificate'
                       }
                     </div>
@@ -1242,6 +1257,24 @@ const MerchantDashboard = () => {
                       }}
                     >
                       Resubmit
+                    </button>
+                  )}
+                  {product.isOrganic && product.organicCertificate?.status === 'rejected' && (
+                    <button 
+                      className="resubmit-organic"
+                      onClick={() => handleResubmitOrganic(product._id)}
+                      style={{
+                        background: '#059669',
+                        color: 'white',
+                        border: 'none',
+                        padding: '0.5rem 1rem',
+                        borderRadius: '0.5rem',
+                        cursor: 'pointer',
+                        fontSize: '0.875rem',
+                        fontWeight: '500'
+                      }}
+                    >
+                      🌱 Resubmit Certificate
                     </button>
                   )}
                   <button 

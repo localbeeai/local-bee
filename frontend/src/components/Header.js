@@ -402,14 +402,16 @@ const Header = () => {
                     </button>
                     
                     {user.role === 'merchant' && (
-                      <Link 
-                        to={`/merchant/${user._id}`}
+                      <button 
                         className="dropdown-item"
-                        onClick={() => setDropdownOpen(false)}
+                        onClick={() => {
+                          navigate(`/merchant/${user._id}`);
+                          setDropdownOpen(false);
+                        }}
                       >
                         <UserCircleIcon className="icon" />
                         My Store
-                      </Link>
+                      </button>
                     )}
                     
                     <button 

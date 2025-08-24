@@ -122,6 +122,11 @@ const StatusBadge = styled.span`
     background: #fee2e2;
     color: #991b1b;
   }
+  
+  &.resubmitted {
+    background: #dbeafe;
+    color: #1e40af;
+  }
 `;
 
 const ImageGallery = styled.div`
@@ -233,6 +238,11 @@ const OrganicCertContainer = styled.div`
   &.rejected {
     border-color: #ef4444;
     background: #fef2f2;
+  }
+  
+  &.resubmitted {
+    border-color: #3b82f6;
+    background: #eff6ff;
   }
 `;
 
@@ -586,7 +596,7 @@ const ProductDetailModal = ({
 
         <ActionSection>
           {/* Product Approval Actions */}
-          {(product.approvalStatus || 'pending') === 'pending' && (
+          {((product.approvalStatus || 'pending') === 'pending' || (product.approvalStatus || 'pending') === 'resubmitted') && (
             <>
               <Button 
                 className="primary" 
@@ -604,21 +614,23 @@ const ProductDetailModal = ({
           )}
 
           {/* Organic Certificate Approval Actions */}
-          {product.isOrganic && product.organicCertificate?.status === 'pending' && (
-            <>
-              <Button 
-                className="primary" 
-                onClick={() => handleAction('organic-approve')}
-              >
-                ✅ Approve Certificate
-              </Button>
-              <Button 
-                className="danger" 
-                onClick={() => handleAction('organic-reject')}
-              >
-                ❌ Reject Certificate
-              </Button>
-            </>
+          {product.isOrganic && product.organicCertificate && (
+            (product.organicCertificate.status === 'pending' || product.organicCertificate.status === 'resubmitted') && (
+              <>
+                <Button 
+                  className="primary" 
+                  onClick={() => handleAction('organic-approve')}
+                >
+                  ✅ Approve Certificate
+                </Button>
+                <Button 
+                  className="danger" 
+                  onClick={() => handleAction('organic-reject')}
+                >
+                  ❌ Reject Certificate
+                </Button>
+              </>
+            )
           )}
           
           {showReasonInput && (

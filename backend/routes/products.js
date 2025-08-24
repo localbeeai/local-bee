@@ -134,4 +134,45 @@ router.put('/:id/resubmit', auth, async (req, res) => {
   }
 });
 
+// Resubmit organic certificate for review (merchant action)
+router.put('/:id/resubmit-organic', auth, async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    // Check if user is the merchant who owns this product
+    if (product.merchant.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to resubmit this organic certificate' });
+    }
+
+    // Only allow resubmission if organic certificate is rejected
+    if (!product.organicCertificate || product.organicCertificate.status !== 'rejected') {
+      return res.status(400).json({ message: 'Organic certificate must be rejected before resubmission' });
+    }
+
+    // Update organic certificate status to resubmitted
+    product.organicCertificate.status = 'resubmitted';
+    product.organicCertificate.reason = undefined; // Clear rejection reason
+    product.organicCertificate.reviewedAt = undefined; // Clear previous review
+    product.organicCertificate.reviewedBy = undefined;
+    
+    await product.save();
+
+    res.json({ 
+      message: 'Organic certificate resubmitted for review successfully',
+      product: {
+        _id: product._id,
+        name: product.name,
+        organicCertificate: product.organicCertificate
+      }
+    });
+  } catch (error) {
+    console.error('Resubmit organic certificate error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;
