@@ -1,6 +1,7 @@
 const express = require('express');
 const { body } = require('express-validator');
 const { auth, merchant } = require('../middleware/auth');
+const Product = require('../models/Product');
 const {
   getProducts,
   getProduct,
