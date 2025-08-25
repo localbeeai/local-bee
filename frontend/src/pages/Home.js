@@ -687,7 +687,7 @@ const Home = () => {
     <>
       <EnhancedHero 
         userLocation={userLocation}
-        onLocationRequest={handleLocationRequest}
+        onLocationRequest={promptLocationSetup}
       />
 
       <LocalBusinessSection />
@@ -724,7 +724,7 @@ const Home = () => {
               </p>
               {!userLocation && (
                 <button 
-                  onClick={handleLocationRequest}
+                  onClick={promptLocationSetup}
                   style={{
                     background: 'var(--primary-green)',
                     color: 'white',
