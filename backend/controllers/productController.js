@@ -110,11 +110,13 @@ const getProducts = async (req, res) => {
         
         // Find merchants within radius
         if (userLocation) {
+          console.log('DEBUG: Processing location filter with userLocation:', userLocation);
           const merchants = await User.find({ 
             role: 'merchant',
             'businessInfo.isApproved': true,
             location: { $exists: true }
           });
+          console.log('DEBUG: Found', merchants.length, 'merchants with location data');
           
           const nearbyMerchants = merchants.filter(merchant => {
             if (!merchant.location || !merchant.location.coordinates) return false;
@@ -126,8 +128,10 @@ const getProducts = async (req, res) => {
               merchant.location.coordinates[0]
             );
             
+            console.log(`DEBUG: Merchant ${merchant.businessInfo?.businessName || merchant.name} is ${distance} miles away (radius: ${radius})`);
             return distance <= parseFloat(radius);
           });
+          console.log('DEBUG: Found', nearbyMerchants.length, 'nearby merchants within', radius, 'miles');
           
           if (nearbyMerchants.length > 0) {
             merchantLocationFilter = nearbyMerchants.map(m => m._id);
