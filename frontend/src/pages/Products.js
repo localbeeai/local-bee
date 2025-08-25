@@ -485,7 +485,7 @@ const Products = () => {
         }
       });
       
-      const response = await axios.get(`/api/products?${params.toString()}`);
+      const response = await axios.get(`/products?${params.toString()}`);
       setProducts(response.data.products || []);
       setPagination(response.data.pagination || {});
       setLocationInfo(response.data.locationInfo || null);

@@ -93,7 +93,7 @@ export const LocationProvider = ({ children }) => {
         limit: 0 // Get count only
       };
 
-      const response = await api.get('/api/products', { params });
+      const response = await api.get('/products', { params });
       
       if (response.data.locationInfo) {
         setNearbyMerchants(response.data.locationInfo.nearbyMerchants || 0);
