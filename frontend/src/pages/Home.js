@@ -472,35 +472,24 @@ const Home = () => {
   const [nearbyMerchants, setNearbyMerchants] = useState([]);
   
   useEffect(() => {
-    initializeLocation();
     fetchPopularProducts();
-  }, [user]);
-
-  const initializeLocation = () => {
-    const existingZip = locationService.getUserZipCode();
-    const permission = locationService.getLocationPermission();
     
-    if (existingZip) {
-      setUserLocation(existingZip);
-    } else if (permission !== 'denied' && !hasShownLocationModal && !user) {
-      // Show location modal for new visitors (not logged in users)
-      setTimeout(() => {
-        setShowLocationModal(true);
-        setHasShownLocationModal(true);
-      }, 2000); // Show after 2 seconds
+    // Auto-prompt location setup for new users after 3 seconds
+    if (!hasLocation() && !user) {
+      const hasPromptedBefore = localStorage.getItem('hasPromptedLocation');
+      if (!hasPromptedBefore) {
+        setTimeout(() => {
+          promptLocationSetup();
+          localStorage.setItem('hasPromptedLocation', 'true');
+        }, 3000);
+      }
     }
-  };
-
-  const handleLocationSet = (zipCode, method) => {
-    if (zipCode) {
-      setUserLocation(zipCode);
-      fetchPopularProducts(); // Refresh products with location
-    }
-  };
-
-  const handleLocationRequest = () => {
-    setShowLocationModal(true);
-  };
+  }, [user, hasLocation, promptLocationSetup]);
+  
+  // Refresh products when location changes
+  useEffect(() => {
+    fetchPopularProducts();
+  }, [userLocation]);
 
   const fetchPopularProducts = async () => {
     try {
