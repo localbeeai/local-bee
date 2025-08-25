@@ -59,19 +59,20 @@ const Logo = styled(Link)`
   gap: 0.5rem;
 `;
 
-const LocationDisplay = styled.div`
+const LocationBanner = styled.div`
+  background: linear-gradient(135deg, var(--secondary-green), var(--accent-green));
+  padding: 0.75rem 1rem;
   display: flex;
+  justify-content: center;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: var(--secondary-green);
-  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-dark);
   cursor: pointer;
   transition: background-color 0.2s;
-  margin-right: 1rem;
   
   &:hover {
-    background: rgba(34, 197, 94, 0.15);
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.1));
   }
   
   .location-icon {
@@ -81,23 +82,22 @@ const LocationDisplay = styled.div`
   }
   
   .location-text {
-    font-size: 0.875rem;
-    color: var(--text-dark);
     font-weight: 500;
     
-    .location-main {
-      display: block;
-    }
-    
-    .location-sub {
-      font-size: 0.75rem;
-      color: var(--text-light);
-      font-weight: 400;
+    @media (max-width: 768px) {
+      font-size: 0.8rem;
     }
   }
   
-  @media (max-width: 968px) {
-    display: none;
+  .change-link {
+    color: var(--primary-green);
+    text-decoration: underline;
+    margin-left: 0.5rem;
+    font-weight: 600;
+    
+    &:hover {
+      color: var(--primary-green-dark);
+    }
   }
 `;
 
@@ -383,28 +383,21 @@ const Header = () => {
         🌱 Shop Local, Support Your Community - Free Delivery on Orders Over $50!
       </TopBar>
       
+      {hasLocation() && (
+        <LocationBanner onClick={promptLocationSetup}>
+          <MapPinIcon className="location-icon" />
+          <span className="location-text">
+            📍 Showing products near {getLocationString()}
+            <span className="change-link">Change Location</span>
+          </span>
+        </LocationBanner>
+      )}
+      
       <MainHeader>
         <Nav>
           <Logo to="/">
             🐝 Local Bee
           </Logo>
-          
-          <LocationDisplay onClick={promptLocationSetup}>
-            <MapPinIcon className="location-icon" />
-            <div className="location-text">
-              {hasLocation() ? (
-                <>
-                  <span className="location-main">{getLocationString()}</span>
-                  <span className="location-sub">Within {radius} miles</span>
-                </>
-              ) : (
-                <>
-                  <span className="location-main">Set Location</span>
-                  <span className="location-sub">Find local products</span>
-                </>
-              )}
-            </div>
-          </LocationDisplay>
 
           <SearchBar>
             <form onSubmit={handleSearch}>
