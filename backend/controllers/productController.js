@@ -133,22 +133,51 @@ const getProducts = async (req, res) => {
             merchantLocationFilter = nearbyMerchants.map(m => m._id);
             query.merchant = { $in: merchantLocationFilter };
           } else {
-            // No merchants in range, return empty result
-            return res.json({
-              products: [],
-              pagination: {
-                currentPage: parseInt(page),
-                totalPages: 0,
-                totalProducts: 0,
-                hasMore: false
-              },
-              locationInfo: {
-                userLocation,
-                radius: parseFloat(radius),
-                nearbyMerchants: 0,
-                message: `No merchants found within ${radius} miles of your location`
-              }
-            });
+            // No merchants in range - find closest merchants and show them with message
+            console.log(`No merchants within ${radius} miles, finding nearest ones...`);
+            
+            // Calculate distances to all merchants and sort by distance
+            const allMerchantsWithDistance = merchants.map(merchant => {
+              if (!merchant.location?.coordinates) return null;
+              
+              const distance = calculateDistance(
+                userLocation.latitude,
+                userLocation.longitude,
+                merchant.location.coordinates[1],
+                merchant.location.coordinates[0]
+              );
+              
+              return { merchant, distance };
+            }).filter(item => item !== null).sort((a, b) => a.distance - b.distance);
+            
+            // Get products from the 3 nearest merchants
+            const nearestMerchants = allMerchantsWithDistance.slice(0, 3).map(item => item.merchant._id);
+            
+            if (nearestMerchants.length > 0) {
+              query.merchant = { $in: nearestMerchants };
+              merchantLocationFilter = nearestMerchants;
+              
+              // Add special flag to indicate these are fallback results
+              userLocation.fallbackResults = true;
+              userLocation.nearestDistance = allMerchantsWithDistance[0]?.distance || null;
+            } else {
+              // Truly no merchants with location data
+              return res.json({
+                products: [],
+                pagination: {
+                  currentPage: parseInt(page),
+                  totalPages: 0,
+                  totalProducts: 0,
+                  hasMore: false
+                },
+                locationInfo: {
+                  userLocation,
+                  radius: parseFloat(radius),
+                  nearbyMerchants: 0,
+                  message: `No merchants found. Please check back later as we add more local businesses to your area.`
+                }
+              });
+            }
           }
         }
       } catch (error) {
@@ -222,6 +251,20 @@ const getProducts = async (req, res) => {
     const total = await Product.countDocuments(query);
     const totalPages = Math.ceil(total / limit);
 
+    // Create response with appropriate messaging
+    const locationInfo = userLocation ? {
+      userLocation,
+      radius: parseFloat(radius),
+      nearbyMerchants: merchantLocationFilter ? merchantLocationFilter.length : null,
+      appliedLocationFilter: !!merchantLocationFilter,
+      fallbackResults: userLocation.fallbackResults || false,
+      message: userLocation.fallbackResults 
+        ? `No merchants found within ${radius} miles of ${userLocation.city || 'your location'}. Showing nearest merchants (${userLocation.nearestDistance} miles away).`
+        : merchantLocationFilter && merchantLocationFilter.length > 0
+        ? `Found ${merchantLocationFilter.length} merchant${merchantLocationFilter.length === 1 ? '' : 's'} within ${radius} miles.`
+        : null
+    } : null;
+
     res.json({
       products: productsWithDistance,
       pagination: {
@@ -230,12 +273,7 @@ const getProducts = async (req, res) => {
         totalProducts: total,
         hasMore: page < totalPages
       },
-      locationInfo: userLocation ? {
-        userLocation,
-        radius: parseFloat(radius),
-        nearbyMerchants: merchantLocationFilter ? merchantLocationFilter.length : null,
-        appliedLocationFilter: !!merchantLocationFilter
-      } : null
+      locationInfo
     });
 
   } catch (error) {

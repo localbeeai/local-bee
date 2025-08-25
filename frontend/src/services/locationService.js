@@ -40,40 +40,33 @@ class LocationService {
     });
   }
 
-  // Convert coordinates to zip code using a reverse geocoding service
+  // Convert coordinates to zip code using reverse geocoding
   async coordinatesToZipCode(latitude, longitude) {
     try {
-      // For development, we'll use a simple approximation
-      // In production, you'd want to use a proper geocoding service like:
-      // - Google Geocoding API
-      // - Mapbox Geocoding API
-      // - OpenCage Geocoding API
+      console.log(`Attempting reverse geocoding for: ${latitude}, ${longitude}`);
       
-      // Mock implementation for development
-      const mockZipCodes = [
-        { lat: 40.7589, lng: -73.9851, zip: '10018' }, // NYC
-        { lat: 34.0522, lng: -118.2437, zip: '90210' }, // LA
-        { lat: 41.8781, lng: -87.6298, zip: '60601' }, // Chicago
-        { lat: 29.7604, lng: -95.3698, zip: '77001' }, // Houston
-        { lat: 39.7392, lng: -104.9903, zip: '80202' }, // Denver
-      ];
-
-      // Find closest zip code (simple distance calculation)
-      let closestZip = '00000';
-      let minDistance = Infinity;
+      // Use free reverse geocoding service (no API key required)
+      const response = await fetch(
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+      );
       
-      mockZipCodes.forEach(location => {
-        const distance = Math.sqrt(
-          Math.pow(latitude - location.lat, 2) + 
-          Math.pow(longitude - location.lng, 2)
-        );
-        if (distance < minDistance) {
-          minDistance = distance;
-          closestZip = location.zip;
-        }
-      });
-
-      return closestZip;
+      if (!response.ok) {
+        throw new Error('Geocoding service unavailable');
+      }
+      
+      const data = await response.json();
+      console.log('Reverse geocoding response:', data);
+      
+      // Extract zip code from the response
+      const zipCode = data.postcode || data.postalCode;
+      
+      if (zipCode && this.isValidZipCode(zipCode)) {
+        console.log(`GPS Location: ${data.city}, ${data.principalSubdivision} ${zipCode}`);
+        return zipCode;
+      } else {
+        console.warn('Could not determine valid zip code from GPS location:', data);
+        return null;
+      }
     } catch (error) {
       console.error('Error converting coordinates to zip code:', error);
       return null;

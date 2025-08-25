@@ -561,14 +561,25 @@ const Products = () => {
             <span>{pagination.totalProducts} products found</span>
           )}
           {locationInfo && hasLocation() && (
-            <span style={{ marginLeft: '1rem', color: 'var(--primary-green)', fontWeight: '500' }}>
-              📍 Near {getLocationString()}
-              {locationInfo.nearbyMerchants !== undefined && locationInfo.nearbyMerchants > 0 && (
-                <span style={{ marginLeft: '0.5rem', color: 'var(--text-light)' }}>
-                  • {locationInfo.nearbyMerchants} merchants in area
+            <div style={{ marginLeft: '1rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              <span style={{ color: 'var(--primary-green)', fontWeight: '500' }}>
+                📍 Near {getLocationString()}
+                {locationInfo.nearbyMerchants !== undefined && locationInfo.nearbyMerchants > 0 && (
+                  <span style={{ marginLeft: '0.5rem', color: 'var(--text-light)' }}>
+                    • {locationInfo.nearbyMerchants} merchants in area
+                  </span>
+                )}
+              </span>
+              {locationInfo.message && (
+                <span style={{ 
+                  fontSize: '0.875rem', 
+                  color: locationInfo.fallbackResults ? 'var(--warning-orange)' : 'var(--text-light)',
+                  fontStyle: locationInfo.fallbackResults ? 'italic' : 'normal'
+                }}>
+                  {locationInfo.fallbackResults ? '⚠️ ' : 'ℹ️ '}{locationInfo.message}
                 </span>
               )}
-            </span>
+            </div>
           )}
           {!hasLocation() && (
             <button 
@@ -702,6 +713,28 @@ const Products = () => {
           <div className="icon">🔍</div>
           <h3>No products found</h3>
           <p>Try adjusting your search criteria or check back later for new products!</p>
+        </EmptyState>
+      ) : locationInfo?.message && products.length === 0 ? (
+        <EmptyState>
+          <div className="icon">📍</div>
+          <h3>No local merchants found</h3>
+          <p>{locationInfo.message}</p>
+          <button 
+            onClick={promptLocationSetup}
+            style={{ 
+              marginTop: '1rem', 
+              background: 'var(--primary-green)', 
+              color: 'white', 
+              border: 'none', 
+              padding: '0.75rem 1.5rem', 
+              borderRadius: '0.5rem', 
+              cursor: 'pointer',
+              fontSize: '1rem',
+              fontWeight: '500'
+            }}
+          >
+            Try Different Location
+          </button>
         </EmptyState>
       ) : (
         <>

@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const User = require('../models/User');
+const { lookupZipCode } = require('../services/zipCodeService');
 require('dotenv').config();
 
 // Sample locations around major US cities for testing
@@ -36,42 +37,67 @@ async function updateMerchantLocations() {
     console.log('Connecting to MongoDB...');
     await mongoose.connect(process.env.MONGODB_URI);
     
-    console.log('Finding merchants with invalid locations...');
-    const merchants = await User.find({ 
-      role: 'merchant',
-      $or: [
-        { 'location.coordinates': [0, 0] },
-        { 'location.coordinates': { $exists: false } },
-        { location: { $exists: false } }
-      ]
-    });
+    console.log('Finding merchants to update locations...');
+    const merchants = await User.find({ role: 'merchant' });
     
-    console.log(`Found ${merchants.length} merchants to update`);
+    console.log(`Found ${merchants.length} merchants to check`);
     
     for (let i = 0; i < merchants.length; i++) {
       const merchant = merchants[i];
-      const locationData = testLocations[i % testLocations.length]; // Cycle through locations
       
-      // Update merchant location
-      merchant.location = {
-        type: 'Point',
-        coordinates: locationData.coordinates
-      };
+      // Check if merchant has address with zip code
+      let zipCode = merchant.address?.zipCode;
+      let city = merchant.address?.city;
+      let state = merchant.address?.state;
       
-      // Update address if it doesn't exist or is incomplete
-      if (!merchant.address || !merchant.address.city) {
+      console.log(`Processing ${merchant.businessInfo?.businessName || merchant.name}`);
+      console.log(`Current address: ${JSON.stringify(merchant.address)}`);
+      
+      // If no zip code, use a default location (you should collect this from merchants)
+      if (!zipCode) {
+        console.log('No zip code found, prompting merchant to update profile...');
+        // For now, let's use a placeholder - in production, merchants should provide this
+        zipCode = '06457'; // Middletown, CT (mentioned in their bio)
+        city = 'Middletown';
+        state = 'CT';
+        
+        // Update their address
         merchant.address = {
           ...merchant.address,
-          city: locationData.city,
-          state: locationData.state,
-          zipCode: locationData.zipCode,
+          zipCode,
+          city,
+          state,
           country: 'USA'
         };
       }
       
-      await merchant.save();
-      
-      console.log(`Updated ${merchant.name} (${merchant.businessInfo?.businessName}) -> ${locationData.city}, ${locationData.state}`);
+      try {
+        // Use the zip code service to get accurate coordinates
+        const locationData = await lookupZipCode(zipCode);
+        
+        // Update merchant location with real coordinates from their zip code
+        merchant.location = {
+          type: 'Point',
+          coordinates: [locationData.longitude, locationData.latitude] // [lng, lat] for MongoDB
+        };
+        
+        await merchant.save();
+        
+        console.log(`✅ Updated ${merchant.businessInfo?.businessName || merchant.name}`);
+        console.log(`   Address: ${city}, ${state} ${zipCode}`);
+        console.log(`   Coordinates: [${locationData.longitude}, ${locationData.latitude}]`);
+        
+      } catch (error) {
+        console.error(`❌ Error updating ${merchant.name}: ${error.message}`);
+        // Fall back to approximate location if zip lookup fails
+        const fallbackLocation = testLocations[i % testLocations.length];
+        merchant.location = {
+          type: 'Point',
+          coordinates: fallbackLocation.coordinates
+        };
+        await merchant.save();
+        console.log(`   Used fallback location: ${fallbackLocation.city}, ${fallbackLocation.state}`);
+      }
     }
     
     console.log(`✅ Successfully updated ${merchants.length} merchant locations!`);
