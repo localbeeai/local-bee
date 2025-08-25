@@ -461,13 +461,13 @@ const Products = () => {
   // Handle zip code from URL parameters
   useEffect(() => {
     const zipParam = searchParams.get('zip');
-    if (zipParam && !hasLocation()) {
-      // Set location from URL parameter if not already set
+    if (zipParam) {
+      // Always set location from URL parameter when zip is provided
       setLocation(zipParam).catch(error => {
         console.error('Failed to set location from URL zip:', error);
       });
     }
-  }, [searchParams, hasLocation, setLocation]);
+  }, [searchParams, setLocation]);
 
   const fetchProducts = async (page = 1) => {
     setLoading(true);
