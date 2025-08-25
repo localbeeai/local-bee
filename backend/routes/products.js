@@ -9,12 +9,16 @@ const {
   updateProduct,
   deleteProduct,
   getMerchantProducts,
-  addReview
+  addReview,
+  getRecommendations
 } = require('../controllers/productController');
 
 const router = express.Router();
 
 router.get('/', getProducts);
+
+// Get personalized recommendations
+router.get('/recommendations/personalized', getRecommendations);
 
 router.get('/my-products', auth, merchant, getMerchantProducts);
 

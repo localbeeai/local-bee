@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLocation } from '../context/LocationContext';
 import axios from '../config/api';
 import { getImageUrl } from '../utils/imageUrl';
 import styled from 'styled-components';
@@ -363,10 +364,12 @@ const Pagination = styled.div`
 
 const Products = () => {
   const { user } = useAuth();
+  const { getLocationParams, hasLocation, getLocationString, promptLocationSetup } = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({});
+  const [locationInfo, setLocationInfo] = useState(null);
   const [userFavorites, setUserFavorites] = useState([]);
   const [filters, setFilters] = useState({
     search: searchParams.get('search') || '',
@@ -374,7 +377,7 @@ const Products = () => {
     minPrice: searchParams.get('minPrice') || '',
     maxPrice: searchParams.get('maxPrice') || '',
     isOrganic: searchParams.get('isOrganic') || '',
-    sort: searchParams.get('sort') || '-createdAt',
+    sort: searchParams.get('sort') || (hasLocation() ? 'distance' : '-createdAt'),
     distance: searchParams.get('distance') || ''
   });
 
@@ -401,7 +404,7 @@ const Products = () => {
     { value: '-price', label: 'Price: High to Low' },
     { value: '-rating.average', label: 'Highest Rated' },
     { value: 'name', label: 'Name A-Z' },
-    { value: 'distance', label: 'Distance: Nearest First' }
+    ...(hasLocation() ? [{ value: 'distance', label: 'Distance: Nearest First' }] : [])
   ];
 
   useEffect(() => {
@@ -418,11 +421,23 @@ const Products = () => {
       const params = new URLSearchParams(searchParams);
       params.set('page', page);
       
+      // Add location parameters for proximity-based results
+      const locationParams = getLocationParams();
+      Object.entries(locationParams).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params.set(key, value);
+        }
+      });
+      
       const response = await axios.get(`/api/products?${params.toString()}`);
-      setProducts(response.data.products);
-      setPagination(response.data.pagination);
+      setProducts(response.data.products || []);
+      setPagination(response.data.pagination || {});
+      setLocationInfo(response.data.locationInfo || null);
     } catch (error) {
       console.error('Error fetching products:', error);
+      setProducts([]);
+      setPagination({});
+      setLocationInfo(null);
     } finally {
       setLoading(false);
     }
@@ -445,7 +460,10 @@ const Products = () => {
           if (!isNaN(numValue) && numValue >= 0) {
             newParams.set(key, numValue.toString());
           }
-        } else {
+        } else if (key === 'distance' && hasLocation()) {
+          // Set radius parameter for location-based filtering
+          newParams.set('radius', value);
+        } else if (key !== 'distance') {
           newParams.set(key, value);
         }
       }
@@ -538,11 +556,39 @@ const Products = () => {
     <Container>
       <Header>
         <h1>🛍️ Browse Local Products</h1>
-        {pagination.totalProducts !== undefined && (
-          <div className="results-info">
-            {pagination.totalProducts} products found
-          </div>
-        )}
+        <div className="results-info">
+          {pagination.totalProducts !== undefined && (
+            <span>{pagination.totalProducts} products found</span>
+          )}
+          {locationInfo && hasLocation() && (
+            <span style={{ marginLeft: '1rem', color: 'var(--primary-green)', fontWeight: '500' }}>
+              📍 Near {getLocationString()}
+              {locationInfo.nearbyMerchants !== undefined && locationInfo.nearbyMerchants > 0 && (
+                <span style={{ marginLeft: '0.5rem', color: 'var(--text-light)' }}>
+                  • {locationInfo.nearbyMerchants} merchants in area
+                </span>
+              )}
+            </span>
+          )}
+          {!hasLocation() && (
+            <button 
+              onClick={promptLocationSetup}
+              style={{ 
+                marginLeft: '1rem', 
+                background: 'var(--primary-green)', 
+                color: 'white', 
+                border: 'none', 
+                padding: '0.5rem 1rem', 
+                borderRadius: '0.5rem', 
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+                fontWeight: '500'
+              }}
+            >
+              📍 Set Location for Local Products
+            </button>
+          )}
+        </div>
       </Header>
 
       <FiltersBar>
@@ -606,20 +652,22 @@ const Products = () => {
           </select>
         </div>
 
-        <div className="filter-group">
-          <label>Distance</label>
-          <select
-            value={filters.distance}
-            onChange={(e) => handleFilterChange('distance', e.target.value)}
-          >
-            <option value="">Any Distance</option>
-            <option value="5">Within 5 miles</option>
-            <option value="10">Within 10 miles</option>
-            <option value="25">Within 25 miles</option>
-            <option value="50">Within 50 miles</option>
-            <option value="100">Within 100 miles</option>
-          </select>
-        </div>
+        {hasLocation() && (
+          <div className="filter-group">
+            <label>Distance</label>
+            <select
+              value={filters.distance}
+              onChange={(e) => handleFilterChange('distance', e.target.value)}
+            >
+              <option value="">Any Distance</option>
+              <option value="5">Within 5 miles</option>
+              <option value="10">Within 10 miles</option>
+              <option value="25">Within 25 miles</option>
+              <option value="50">Within 50 miles</option>
+              <option value="100">Within 100 miles</option>
+            </select>
+          </div>
+        )}
 
         <div className="filter-group">
           <label>Sort By</label>
@@ -724,10 +772,22 @@ const Products = () => {
                     )}
                   </div>
                   <div className="stock-info">
-                    {product.inventory.quantity > 0 ? 
-                      `${product.inventory.quantity} in stock` : 
-                      'Out of stock'
-                    }
+                    <span>
+                      {product.inventory.quantity > 0 ? 
+                        `${product.inventory.quantity} in stock` : 
+                        'Out of stock'
+                      }
+                    </span>
+                    {product.distance !== undefined && product.distance !== null && (
+                      <span style={{ 
+                        marginLeft: '1rem', 
+                        color: 'var(--primary-green)', 
+                        fontWeight: '500',
+                        fontSize: '0.75rem'
+                      }}>
+                        📍 {product.distance} mi away
+                      </span>
+                    )}
                   </div>
                   
                   {(product.shipping?.deliveryTime?.sameDay || product.shipping?.canPickup) && (

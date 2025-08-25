@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLocation } from '../context/LocationContext';
 import axios from '../config/api';
 import { getImageUrl } from '../utils/imageUrl';
 import styled from 'styled-components';
-import LocationModal from '../components/LocationModal';
 import EnhancedHero from '../components/home/EnhancedHero';
 import LocalBusinessSection from '../components/home/LocalBusinessSection';
 import HowItWorksSection from '../components/home/HowItWorksSection';
-import locationService from '../services/locationService';
 
 const Hero = styled.section`
   background: linear-gradient(135deg, var(--secondary-green), var(--accent-green));
@@ -461,12 +460,16 @@ const MerchantCard = styled(Link)`
 
 const Home = () => {
   const { user } = useAuth();
+  const { 
+    hasLocation, 
+    getLocationParams, 
+    promptLocationSetup, 
+    userLocation,
+    getLocationString 
+  } = useLocation();
   const [popularProducts, setPopularProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [nearbyMerchants, setNearbyMerchants] = useState([]);
-  const [showLocationModal, setShowLocationModal] = useState(false);
-  const [userLocation, setUserLocation] = useState(null);
-  const [hasShownLocationModal, setHasShownLocationModal] = useState(false);
   
   useEffect(() => {
     initializeLocation();
@@ -504,14 +507,13 @@ const Home = () => {
       setLoadingProducts(true);
       const params = new URLSearchParams();
       
-      // Use location from various sources
-      const currentLocation = userLocation || 
-                            user?.address?.zipCode || 
-                            locationService.getUserZipCode();
-      
-      if (currentLocation) {
-        params.set('userZip', currentLocation);
-      }
+      // Add location parameters
+      const locationParams = getLocationParams();
+      Object.entries(locationParams).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          params.set(key, value);
+        }
+      });
       
       // Get popular products (highest rated, most views, most recent)
       params.set('sort', '-views,-rating.average,-createdAt');
@@ -817,11 +819,7 @@ const Home = () => {
         </Categories>
       </CategoriesSection>
 
-      <LocationModal 
-        isOpen={showLocationModal}
-        onClose={() => setShowLocationModal(false)}
-        onLocationSet={handleLocationSet}
-      />
+      {/* LocationModal handled by LocationSetupHandler in App.js */}
     </>
   );
 };

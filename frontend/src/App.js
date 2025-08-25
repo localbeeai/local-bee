@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { LocationProvider, useLocation } from './context/LocationContext';
+import LocationSetup from './components/LocationSetup';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -27,6 +29,19 @@ import Settings from './pages/Settings';
 import PrivateRoute from './components/PrivateRoute';
 import ScrollToTop from './components/ScrollToTop';
 
+// Component to handle LocationSetup modal
+const LocationSetupHandler = () => {
+  const { showLocationSetup, handleLocationSet, setShowLocationSetup } = useLocation();
+  
+  return (
+    <LocationSetup 
+      isOpen={showLocationSetup}
+      onClose={() => setShowLocationSetup(false)}
+      onLocationSet={handleLocationSet}
+    />
+  );
+};
+
 const queryClient = new QueryClient();
 
 function App() {
@@ -34,10 +49,12 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <CartProvider>
-          <Router>
-          <div className="App">
-            <ScrollToTop />
-            <Header />
+          <LocationProvider>
+            <Router>
+            <div className="App">
+              <ScrollToTop />
+              <Header />
+              <LocationSetupHandler />
             <main style={{ minHeight: 'calc(100vh - 140px)' }}>
               <Routes>
                 <Route path="/" element={<Home />} />
@@ -110,9 +127,10 @@ function App() {
                 />
               </Routes>
             </main>
-            <Footer />
-          </div>
-          </Router>
+              <Footer />
+            </div>
+            </Router>
+          </LocationProvider>
         </CartProvider>
       </AuthProvider>
     </QueryClientProvider>

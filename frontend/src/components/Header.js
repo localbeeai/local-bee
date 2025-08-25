@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useLocation } from '../context/LocationContext';
 import styled from 'styled-components';
 import NotificationBell from './NotificationBell';
 import { getImageUrl } from '../utils/imageUrl';
@@ -15,7 +16,8 @@ import {
   BuildingStorefrontIcon,
   Cog6ToothIcon,
   UserCircleIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon,
+  MapPinIcon
 } from '@heroicons/react/24/outline';
 
 const HeaderContainer = styled.header`
@@ -57,10 +59,52 @@ const Logo = styled(Link)`
   gap: 0.5rem;
 `;
 
+const LocationDisplay = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--secondary-green);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-right: 1rem;
+  
+  &:hover {
+    background: rgba(34, 197, 94, 0.15);
+  }
+  
+  .location-icon {
+    width: 1rem;
+    height: 1rem;
+    color: var(--primary-green);
+  }
+  
+  .location-text {
+    font-size: 0.875rem;
+    color: var(--text-dark);
+    font-weight: 500;
+    
+    .location-main {
+      display: block;
+    }
+    
+    .location-sub {
+      font-size: 0.75rem;
+      color: var(--text-light);
+      font-weight: 400;
+    }
+  }
+  
+  @media (max-width: 968px) {
+    display: none;
+  }
+`;
+
 const SearchBar = styled.div`
   flex: 1;
   max-width: 600px;
-  margin: 0 2rem;
+  margin: 0 1rem;
   position: relative;
 `;
 
@@ -260,6 +304,7 @@ const MobileMenu = styled.div`
 const Header = () => {
   const { user, logout } = useAuth();
   const { getCartItemCount, cartItems } = useCart();
+  const { hasLocation, getLocationString, promptLocationSetup, userLocation, radius } = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -343,6 +388,23 @@ const Header = () => {
           <Logo to="/">
             🐝 Local Bee
           </Logo>
+          
+          <LocationDisplay onClick={promptLocationSetup}>
+            <MapPinIcon className="location-icon" />
+            <div className="location-text">
+              {hasLocation() ? (
+                <>
+                  <span className="location-main">{getLocationString()}</span>
+                  <span className="location-sub">Within {radius} miles</span>
+                </>
+              ) : (
+                <>
+                  <span className="location-main">Set Location</span>
+                  <span className="location-sub">Find local products</span>
+                </>
+              )}
+            </div>
+          </LocationDisplay>
 
           <SearchBar>
             <form onSubmit={handleSearch}>
