@@ -295,23 +295,23 @@ const EnhancedHero = () => {
         <SearchContainer>
           <SearchTitle>🔍 Find products near you</SearchTitle>
           
-          {userLocation ? (
-            <SearchForm onSubmit={handleSearchSubmit}>
-              <SearchInput
-                type="text"
-                placeholder={`Search products near ${userLocation.zipCode || userLocation}`}
-                value={searchZip}
-                onChange={(e) => setSearchZip(e.target.value)}
-                maxLength={5}
-                pattern="\d{5}"
-              />
-              <SearchButton type="submit">
-                Search Products
-              </SearchButton>
-            </SearchForm>
-          ) : (
+          <SearchForm onSubmit={handleSearchSubmit}>
+            <SearchInput
+              type="text"
+              placeholder={userLocation ? `Current: ${userLocation.city || userLocation.zipCode} - Enter new zip` : "Enter your zip code (e.g. 10001)"}
+              value={searchZip}
+              onChange={(e) => setSearchZip(e.target.value)}
+              maxLength={5}
+              pattern="\d{5}"
+            />
+            <SearchButton type="submit">
+              Search Products
+            </SearchButton>
+          </SearchForm>
+          
+          {!userLocation && (
             <LocationButton onClick={handleLocationRequest}>
-              📍 Set Your Location to Get Started
+              📍 Or Use GPS to Set Location
             </LocationButton>
           )}
           

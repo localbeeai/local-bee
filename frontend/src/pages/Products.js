@@ -407,7 +407,7 @@ const Pagination = styled.div`
 
 const Products = () => {
   const { user } = useAuth();
-  const { getLocationParams, hasLocation, getLocationString, promptLocationSetup } = useLocation();
+  const { getLocationParams, hasLocation, getLocationString, promptLocationSetup, setLocation } = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -457,6 +457,17 @@ const Products = () => {
   useEffect(() => {
     fetchUserFavorites();
   }, [user]);
+
+  // Handle zip code from URL parameters
+  useEffect(() => {
+    const zipParam = searchParams.get('zip');
+    if (zipParam && !hasLocation()) {
+      // Set location from URL parameter if not already set
+      setLocation(zipParam).catch(error => {
+        console.error('Failed to set location from URL zip:', error);
+      });
+    }
+  }, [searchParams, hasLocation, setLocation]);
 
   const fetchProducts = async (page = 1) => {
     setLoading(true);
