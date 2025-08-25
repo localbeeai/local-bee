@@ -325,6 +325,49 @@ const EmptyState = styled.div`
   }
 `;
 
+const FallbackMessage = styled.div`
+  background: linear-gradient(135deg, #fef3c7, #fed7aa);
+  border: 1px solid #f59e0b;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+
+  .icon {
+    font-size: 2rem;
+    color: #f59e0b;
+  }
+
+  .content {
+    flex: 1;
+
+    h3 {
+      color: #92400e;
+      margin: 0 0 0.5rem 0;
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+
+    p {
+      color: #92400e;
+      margin: 0;
+      font-size: 0.875rem;
+      line-height: 1.4;
+    }
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    text-align: center;
+    
+    .icon {
+      margin-bottom: 0.5rem;
+    }
+  }
+`;
+
 const Pagination = styled.div`
   display: flex;
   justify-content: center;
@@ -710,34 +753,47 @@ const Products = () => {
         </LoadingGrid>
       ) : products.length === 0 ? (
         <EmptyState>
-          <div className="icon">🔍</div>
-          <h3>No products found</h3>
-          <p>Try adjusting your search criteria or check back later for new products!</p>
-        </EmptyState>
-      ) : locationInfo?.message && products.length === 0 ? (
-        <EmptyState>
-          <div className="icon">📍</div>
-          <h3>No local merchants found</h3>
-          <p>{locationInfo.message}</p>
-          <button 
-            onClick={promptLocationSetup}
-            style={{ 
-              marginTop: '1rem', 
-              background: 'var(--primary-green)', 
-              color: 'white', 
-              border: 'none', 
-              padding: '0.75rem 1.5rem', 
-              borderRadius: '0.5rem', 
-              cursor: 'pointer',
-              fontSize: '1rem',
-              fontWeight: '500'
-            }}
-          >
-            Try Different Location
-          </button>
+          {locationInfo?.message ? (
+            <>
+              <div className="icon">📍</div>
+              <h3>No local merchants found</h3>
+              <p>{locationInfo.message}</p>
+              <button 
+                onClick={promptLocationSetup}
+                style={{ 
+                  marginTop: '1rem', 
+                  background: 'var(--primary-green)', 
+                  color: 'white', 
+                  border: 'none', 
+                  padding: '0.75rem 1.5rem', 
+                  borderRadius: '0.5rem', 
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: '500'
+                }}
+              >
+                Try Different Location
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="icon">🔍</div>
+              <h3>No products found</h3>
+              <p>Try adjusting your search criteria or check back later for new products!</p>
+            </>
+          )}
         </EmptyState>
       ) : (
         <>
+          {locationInfo?.fallbackResults && (
+            <FallbackMessage>
+              <div className="icon">📍</div>
+              <div className="content">
+                <h3>Showing nearest available merchants</h3>
+                <p>{locationInfo.message}</p>
+              </div>
+            </FallbackMessage>
+          )}
           <ProductsGrid>
             {products.map(product => (
               <ProductCard key={product._id} to={`/products/${product._id}`}>

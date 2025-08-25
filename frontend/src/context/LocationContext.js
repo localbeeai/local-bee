@@ -151,6 +151,27 @@ export const LocationProvider = ({ children }) => {
     }
   }, [userLocation]);
 
+  // Set location directly from zip code (for home page search)
+  const setLocation = useCallback(async (zipCode) => {
+    setLocationLoading(true);
+    
+    try {
+      const locationData = await locationService.setUserZipCode(zipCode);
+      if (locationData) {
+        setUserLocation(locationData);
+        await updateNearbyMerchants(locationData);
+        return locationData;
+      } else {
+        throw new Error('Invalid zip code');
+      }
+    } catch (error) {
+      console.error('Error setting location:', error);
+      throw error;
+    } finally {
+      setLocationLoading(false);
+    }
+  }, [updateNearbyMerchants]);
+
   const value = {
     // State
     userLocation,
@@ -164,6 +185,7 @@ export const LocationProvider = ({ children }) => {
     handleLocationSet,
     clearLocation,
     updateRadius,
+    setLocation,
     
     // Helpers
     getLocationParams,
