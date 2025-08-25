@@ -334,10 +334,12 @@ const FallbackMessage = styled.div`
   display: flex;
   align-items: center;
   gap: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 
   .icon {
     font-size: 2rem;
     color: #f59e0b;
+    min-width: 2rem;
   }
 
   .content {
