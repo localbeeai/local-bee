@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import locationService from '../../services/locationService';
+import { useLocation } from '../../context/LocationContext';
 
 const HeroSection = styled.section`
   background: linear-gradient(135deg, 
@@ -244,12 +244,13 @@ const Stat = styled.div`
   }
 `;
 
-const EnhancedHero = ({ userLocation, onLocationRequest }) => {
-  const [searchZip, setSearchZip] = useState(userLocation || '');
+const EnhancedHero = () => {
+  const { userLocation, setLocation, promptLocationSetup } = useLocation();
+  const [searchZip, setSearchZip] = useState('');
   const [searchError, setSearchError] = useState('');
   const navigate = useNavigate();
 
-  const handleSearchSubmit = (e) => {
+  const handleSearchSubmit = async (e) => {
     e.preventDefault();
     setSearchError('');
     
@@ -258,18 +259,24 @@ const EnhancedHero = ({ userLocation, onLocationRequest }) => {
       return;
     }
     
-    if (!locationService.isValidZipCode(searchZip)) {
+    // Basic zip code validation (5 digits)
+    const zipCodeRegex = /^\d{5}$/;
+    if (!zipCodeRegex.test(searchZip)) {
       setSearchError('Please enter a valid 5-digit zip code');
       return;
     }
     
-    // Set the location and navigate to products
-    locationService.setUserZipCode(searchZip);
-    navigate(`/products?zip=${searchZip}`);
+    try {
+      // Set the location using LocationContext
+      await setLocation(searchZip);
+      navigate(`/products?zip=${searchZip}`);
+    } catch (error) {
+      setSearchError('Invalid zip code. Please try again.');
+    }
   };
 
   const handleLocationRequest = () => {
-    onLocationRequest();
+    promptLocationSetup();
   };
 
   return (
@@ -292,7 +299,7 @@ const EnhancedHero = ({ userLocation, onLocationRequest }) => {
             <SearchForm onSubmit={handleSearchSubmit}>
               <SearchInput
                 type="text"
-                placeholder="Enter zip code to search"
+                placeholder={`Search products near ${userLocation.zipCode || userLocation}`}
                 value={searchZip}
                 onChange={(e) => setSearchZip(e.target.value)}
                 maxLength={5}

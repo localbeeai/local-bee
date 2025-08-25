@@ -685,10 +685,7 @@ const Home = () => {
 
   return (
     <>
-      <EnhancedHero 
-        userLocation={userLocation}
-        onLocationRequest={promptLocationSetup}
-      />
+      <EnhancedHero />
 
       <LocalBusinessSection />
       
