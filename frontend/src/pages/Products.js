@@ -481,6 +481,10 @@ const Products = () => {
       const locationParams = getLocationParams();
       Object.entries(locationParams).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
+          // Don't override radius if it's already set from distance filter
+          if (key === 'radius' && params.has('radius')) {
+            return; // Skip setting radius from LocationContext if already set
+          }
           params.set(key, value);
         }
       });
