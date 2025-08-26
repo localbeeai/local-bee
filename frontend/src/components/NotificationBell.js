@@ -175,8 +175,8 @@ const NotificationBell = () => {
   const fetchNotifications = async () => {
     try {
       const [notificationsResponse, messagesResponse] = await Promise.all([
-        axios.get('/api/notifications').catch(() => ({ data: { notifications: [] } })),
-        axios.get('/api/messages/notifications').catch(() => ({ data: [] }))
+        axios.get('/notifications').catch(() => ({ data: { notifications: [] } })),
+        axios.get('/messages/notifications').catch(() => ({ data: [] }))
       ]);
 
       // Format system notifications (product approval/rejection, etc.)
@@ -236,9 +236,9 @@ const NotificationBell = () => {
   const markAllAsRead = async () => {
     try {
       // Mark system notifications as read
-      await axios.put('/api/notifications/read-all');
+      await axios.put('/notifications/read-all');
       // Mark message notifications as read
-      await axios.put('/api/messages/mark-all-read');
+      await axios.put('/messages/mark-all-read');
       
       setNotifications(notifications.map(n => ({ ...n, unread: false })));
       setUnreadCount(0);
@@ -251,10 +251,10 @@ const NotificationBell = () => {
     try {
       if (notification.unread) {
         if (notification.type === 'message') {
-          await axios.put(`/api/messages/${notification.data._id}/read`);
+          await axios.put(`/messages/${notification.data._id}/read`);
         } else {
           // System notification (product approval/rejection, etc.)
-          await axios.put(`/api/notifications/${notification.data._id}/read`);
+          await axios.put(`/notifications/${notification.data._id}/read`);
         }
         
         setNotifications(notifications.map(n => 
