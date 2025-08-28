@@ -76,14 +76,22 @@ export const LocationProvider = ({ children }) => {
       
       // Navigate to products page if on home page
       if (routerLocation.pathname === '/') {
-        navigate(`/products?zip=${locationData.zipCode}`);
+        if (locationData.zipCode) {
+          navigate(`/products?zip=${locationData.zipCode}`);
+        } else if (locationData.latitude && locationData.longitude) {
+          // For GPS-only location (no zip code found)
+          navigate(`/products?lat=${locationData.latitude}&lon=${locationData.longitude}&radius=${locationData.radius || 25}`);
+        } else {
+          // Fallback: just go to products page
+          navigate('/products');
+        }
       }
     } catch (error) {
       console.error('Error setting location:', error);
     } finally {
       setLocationLoading(false);
     }
-  }, []);
+  }, [navigate, routerLocation.pathname]);
 
   // Update nearby merchants based on location
   const updateNearbyMerchants = useCallback(async (location = userLocation) => {

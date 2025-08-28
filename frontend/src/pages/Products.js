@@ -460,16 +460,35 @@ const Products = () => {
     fetchUserFavorites();
   }, [user]);
 
-  // Handle zip code from URL parameters
+  // Handle location parameters from URL (zip code or GPS coordinates)
   useEffect(() => {
     const zipParam = searchParams.get('zip');
+    const latParam = searchParams.get('lat');
+    const lonParam = searchParams.get('lon');
+    const radiusParam = searchParams.get('radius');
+    
     if (zipParam && zipParam !== userLocation?.zipCode) {
-      // Only set location if it's different from current location
+      // Set location from zip code
       setLocation(zipParam).catch(error => {
         console.error('Failed to set location from URL zip:', error);
       });
+    } else if (latParam && lonParam && 
+               (parseFloat(latParam) !== userLocation?.latitude || 
+                parseFloat(lonParam) !== userLocation?.longitude)) {
+      // Set location from GPS coordinates
+      const locationData = {
+        latitude: parseFloat(latParam),
+        longitude: parseFloat(lonParam),
+        radius: radiusParam ? parseInt(radiusParam) : 25,
+        type: 'gps'
+      };
+      
+      // Update LocationContext with GPS coordinates
+      // Note: This doesn't use setLocation since that's for zip codes
+      // Instead we'll let the location params be used directly by the API
+      console.log('Using GPS coordinates from URL:', locationData);
     }
-  }, [searchParams, userLocation?.zipCode, setLocation]); // Added back with zipCode check to prevent loop
+  }, [searchParams, userLocation?.zipCode, userLocation?.latitude, userLocation?.longitude, setLocation]);
 
   const fetchProducts = async (page = 1) => {
     setLoading(true);
@@ -478,16 +497,31 @@ const Products = () => {
       params.set('page', page);
       
       // Add location parameters for proximity-based results
-      const locationParams = getLocationParams();
-      Object.entries(locationParams).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          // Don't override radius if it's already set from distance filter
-          if (key === 'radius' && params.has('radius')) {
-            return; // Skip setting radius from LocationContext if already set
-          }
-          params.set(key, value);
+      // Check for GPS coordinates in URL first, then use LocationContext
+      const latParam = searchParams.get('lat');
+      const lonParam = searchParams.get('lon');
+      const radiusParam = searchParams.get('radius');
+      
+      if (latParam && lonParam) {
+        // Use GPS coordinates from URL
+        params.set('latitude', latParam);
+        params.set('longitude', lonParam);
+        if (radiusParam && !params.has('radius')) {
+          params.set('radius', radiusParam);
         }
-      });
+      } else {
+        // Use location from LocationContext
+        const locationParams = getLocationParams();
+        Object.entries(locationParams).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            // Don't override radius if it's already set from distance filter
+            if (key === 'radius' && params.has('radius')) {
+              return; // Skip setting radius from LocationContext if already set
+            }
+            params.set(key, value);
+          }
+        });
+      }
       
       const response = await axios.get(`/products?${params.toString()}`);
       setProducts(response.data.products || []);
