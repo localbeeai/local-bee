@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation as useRouterLocation } from 'react-router-dom';
 import locationService from '../services/locationService';
 import api from '../config/api';
 
@@ -13,6 +14,8 @@ export const useLocation = () => {
 };
 
 export const LocationProvider = ({ children }) => {
+  const navigate = useNavigate();
+  const routerLocation = useRouterLocation();
   const [userLocation, setUserLocation] = useState(null);
   const [radius, setRadius] = useState(25);
   const [showLocationSetup, setShowLocationSetup] = useState(false);
@@ -73,6 +76,11 @@ export const LocationProvider = ({ children }) => {
       await updateNearbyMerchants(locationData);
       
       setShowLocationSetup(false);
+      
+      // Navigate to products page if on home page
+      if (routerLocation.pathname === '/') {
+        navigate(`/products?zip=${locationData.zipCode}`);
+      }
     } catch (error) {
       console.error('Error setting location:', error);
     } finally {
