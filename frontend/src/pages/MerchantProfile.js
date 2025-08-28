@@ -319,11 +319,11 @@ const MerchantProfile = () => {
       setLoading(true);
       
       // Fetch merchant info
-      const merchantResponse = await axios.get(`/api/users/${id}`);
+      const merchantResponse = await axios.get(`/users/${id}`);
       setMerchant(merchantResponse.data);
 
       // Fetch merchant's products
-      const productsResponse = await axios.get(`/api/products?merchant=${id}`);
+      const productsResponse = await axios.get(`/products?merchant=${id}`);
       setProducts(productsResponse.data.products || []);
       
       setError(null);
