@@ -15,7 +15,7 @@ const NotificationDropdown = ({ user, onClose }) => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await axios.get('/api/notifications', {
+      const response = await axios.get('/notifications', {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -31,7 +31,7 @@ const NotificationDropdown = ({ user, onClose }) => {
   const markAsRead = async (notificationId) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`/api/notifications/${notificationId}/read`, {}, {
+      await axios.put(`/notifications/${notificationId}/read`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -52,7 +52,7 @@ const NotificationDropdown = ({ user, onClose }) => {
   const markAllAsRead = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put('/api/notifications/read-all', {}, {
+      await axios.put('/notifications/read-all', {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

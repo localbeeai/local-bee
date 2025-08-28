@@ -353,7 +353,7 @@ const Settings = () => {
     setError('');
 
     try {
-      const response = await axios.put('/api/users/profile', profileData);
+      const response = await axios.put('/users/profile', profileData);
       updateUser(response.data);
       setMessage('Profile updated successfully!');
     } catch (error) {
@@ -376,7 +376,7 @@ const Settings = () => {
         businessInfo: businessData
       };
       
-      const response = await axios.put('/api/users/profile', updateData);
+      const response = await axios.put('/users/profile', updateData);
       updateUser(response.data);
       setMessage('Business information updated successfully!');
     } catch (error) {
@@ -406,7 +406,7 @@ const Settings = () => {
       const formData = new FormData();
       formData.append('businessPhoto', file);
 
-      const response = await axios.post('/api/upload/business-photo', formData, {
+      const response = await axios.post('/upload/business-photo', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -428,7 +428,7 @@ const Settings = () => {
   const handleBusinessPhotoRemove = async () => {
     try {
       if (businessData.businessPhoto?.filename) {
-        await axios.delete(`/api/upload/image/${businessData.businessPhoto.filename}`);
+        await axios.delete(`/upload/image/${businessData.businessPhoto.filename}`);
       }
 
       setBusinessData(prev => ({

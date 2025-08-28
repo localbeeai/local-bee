@@ -234,7 +234,7 @@ const Checkout = () => {
       setLoading(true);
       setError('');
 
-      const response = await api.post('/api/payments/create-intent', {
+      const response = await api.post('/payments/create-intent', {
         amount: total,
         currency: 'usd',
         shipping: shippingData,
@@ -292,7 +292,7 @@ const Checkout = () => {
       setLoading(true);
       
       // Create order in database
-      const orderResponse = await api.post('/api/orders/create', {
+      const orderResponse = await api.post('/orders/create', {
         paymentIntentId: paymentResult.paymentIntent.id,
         items: cartItems.map(item => ({
           product: item.product._id,

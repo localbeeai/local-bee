@@ -364,7 +364,7 @@ const Messages = () => {
 
   const fetchConversations = async () => {
     try {
-      const response = await axios.get('/api/messages');
+      const response = await axios.get('/messages');
       setConversations(response.data.conversations);
       if (response.data.conversations.length > 0) {
         setSelectedConversation(response.data.conversations[0]);
@@ -378,11 +378,11 @@ const Messages = () => {
 
   const fetchMessages = async (conversationId) => {
     try {
-      const response = await axios.get(`/api/messages/${conversationId}`);
+      const response = await axios.get(`/messages/${conversationId}`);
       setMessages(response.data.messages);
       
       // Mark as read
-      await axios.put(`/api/messages/${conversationId}/read`);
+      await axios.put(`/messages/${conversationId}/read`);
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
@@ -393,7 +393,7 @@ const Messages = () => {
 
     setSending(true);
     try {
-      const response = await axios.post('/api/messages/send', {
+      const response = await axios.post('/messages/send', {
         conversationId: selectedConversation._id,
         content: newMessage.trim(),
         messageType: 'text'

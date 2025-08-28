@@ -217,8 +217,8 @@ const AnalyticsDashboard = ({ userRole = 'merchant', userId = null }) => {
     setLoading(true);
     try {
       const endpoint = userRole === 'admin' 
-        ? '/api/admin/analytics' 
-        : '/api/users/analytics';
+        ? '/admin/analytics' 
+        : '/users/analytics';
       
       const response = await axios.get(`${endpoint}?timeRange=${timeRange}`);
       setAnalytics(response.data);

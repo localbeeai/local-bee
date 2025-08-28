@@ -509,7 +509,7 @@ const Home = () => {
       params.set('limit', '8');
       params.set('featured', 'true'); // Optional: only show featured products
       
-      const response = await axios.get(`/api/products?${params.toString()}`);
+      const response = await axios.get(`/products?${params.toString()}`);
       setPopularProducts(response.data.products || []);
 
       // Mock nearby merchants data

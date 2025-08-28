@@ -225,7 +225,7 @@ const ImageUpload = ({ images = [], onImagesChange, maxImages = 10 }) => {
         formData.append('images', file);
       }
 
-      const response = await axios.post('/api/upload/product-images', formData, {
+      const response = await axios.post('/upload/product-images', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -299,7 +299,7 @@ const ImageUpload = ({ images = [], onImagesChange, maxImages = 10 }) => {
     
     try {
       if (imageToDelete.filename) {
-        await axios.delete(`/api/upload/image/${imageToDelete.filename}`);
+        await axios.delete(`/upload/image/${imageToDelete.filename}`);
       }
 
       const updatedImages = images.filter((_, i) => i !== index);

@@ -610,7 +610,7 @@ const MerchantDashboard = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await axios.get('/api/products/my-products');
+      const response = await axios.get('/products/my-products');
       setProducts(response.data.products);
       setStats(response.data.stats);
     } catch (error) {
@@ -623,7 +623,7 @@ const MerchantDashboard = () => {
   const fetchOrders = async () => {
     setOrdersLoading(true);
     try {
-      const response = await axios.get('/api/orders/merchant');
+      const response = await axios.get('/orders/merchant');
       setOrders(response.data);
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -703,7 +703,7 @@ const MerchantDashboard = () => {
       const formData = new FormData();
       formData.append('certificate', file);
 
-      const response = await axios.post('/api/upload/organic-certificate', formData, {
+      const response = await axios.post('/upload/organic-certificate', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -758,12 +758,12 @@ const MerchantDashboard = () => {
       };
 
       if (editingProduct) {
-        await axios.put(`/api/products/${editingProduct._id}`, productData);
+        await axios.put(`/products/${editingProduct._id}`, productData);
         alert('Product updated successfully!');
         // Don't redirect for updates, stay on the form
         fetchProducts(); // Refresh the products list
       } else {
-        await axios.post('/api/products', productData);
+        await axios.post('/products', productData);
         alert('Product created successfully!');
         // For new products, reset form and go to products tab
         setProductForm({
@@ -832,7 +832,7 @@ const MerchantDashboard = () => {
   const handleDeleteProduct = async (productId) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
       try {
-        await axios.delete(`/api/products/${productId}`);
+        await axios.delete(`/products/${productId}`);
         fetchProducts();
         alert('Product deleted successfully!');
       } catch (error) {
@@ -845,7 +845,7 @@ const MerchantDashboard = () => {
   const handleResubmitProduct = async (productId) => {
     if (window.confirm('Are you sure you want to resubmit this product for review? Make sure you have addressed the feedback provided.')) {
       try {
-        await axios.put(`/api/products/${productId}/resubmit`);
+        await axios.put(`/products/${productId}/resubmit`);
         fetchProducts();
         alert('Product resubmitted for review successfully! We will review it again soon.');
       } catch (error) {
@@ -858,7 +858,7 @@ const MerchantDashboard = () => {
   const handleResubmitOrganic = async (productId) => {
     if (window.confirm('Are you sure you want to resubmit the organic certificate for review? Make sure you have addressed the feedback provided.')) {
       try {
-        await axios.put(`/api/products/${productId}/resubmit-organic`);
+        await axios.put(`/products/${productId}/resubmit-organic`);
         fetchProducts();
         alert('Organic certificate resubmitted for review successfully! We will review it again soon.');
       } catch (error) {
@@ -904,7 +904,7 @@ const MerchantDashboard = () => {
         updateData.shipping = trackingInfo;
       }
       
-      await axios.put(`/api/orders/${orderId}/status`, updateData);
+      await axios.put(`/orders/${orderId}/status`, updateData);
       
       // Refresh orders
       fetchOrders();

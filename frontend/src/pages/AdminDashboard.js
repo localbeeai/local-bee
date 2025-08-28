@@ -268,8 +268,8 @@ const AdminDashboard = () => {
     setLoading(true);
     try {
       const [statsRes, pendingRes] = await Promise.all([
-        axios.get('/api/admin/stats'),
-        axios.get('/api/admin/pending')
+        axios.get('/admin/stats'),
+        axios.get('/admin/pending')
       ]);
 
       setStats(statsRes.data.stats);
@@ -295,7 +295,7 @@ const AdminDashboard = () => {
         ...userFilters
       });
       
-      const response = await axios.get(`/api/admin/users?${params}`);
+      const response = await axios.get(`/admin/users?${params}`);
       setUsers(response.data.users);
       setUserPagination(response.data.pagination);
     } catch (error) {
@@ -311,7 +311,7 @@ const AdminDashboard = () => {
         ...productFilters
       });
       
-      const response = await axios.get(`/api/admin/products?${params}`);
+      const response = await axios.get(`/admin/products?${params}`);
       setProducts(response.data.products);
       setProductPagination(response.data.pagination);
     } catch (error) {
@@ -321,7 +321,7 @@ const AdminDashboard = () => {
 
   const handleApproveMerchant = async (userId, approved, reason = '') => {
     try {
-      await axios.put(`/api/admin/users/${userId}/approve`, { approved, reason });
+      await axios.put(`/admin/users/${userId}/approve`, { approved, reason });
       fetchAdminData(); // Refresh data
     } catch (error) {
       console.error('Error updating merchant approval:', error);
@@ -331,7 +331,7 @@ const AdminDashboard = () => {
 
   const handleApproveOrganic = async (productId, status, reason = '') => {
     try {
-      await axios.put(`/api/admin/products/${productId}/organic-certificate`, { status, reason });
+      await axios.put(`/admin/products/${productId}/organic-certificate`, { status, reason });
       fetchAdminData(); // Refresh data
     } catch (error) {
       console.error('Error updating organic certificate:', error);
@@ -341,7 +341,7 @@ const AdminDashboard = () => {
 
   const handleApproveProduct = async (productId, approved, reason = '') => {
     try {
-      await axios.put(`/api/admin/products/${productId}/approve`, { 
+      await axios.put(`/admin/products/${productId}/approve`, { 
         approved, 
         reason 
       });
@@ -358,9 +358,9 @@ const AdminDashboard = () => {
     
     try {
       if (currentStatus) {
-        await axios.delete(`/api/admin/users/${userId}`);
+        await axios.delete(`/admin/users/${userId}`);
       } else {
-        await axios.put(`/api/admin/users/${userId}/reactivate`);
+        await axios.put(`/admin/users/${userId}/reactivate`);
       }
       fetchAdminData(); // Refresh data
     } catch (error) {
@@ -374,7 +374,7 @@ const AdminDashboard = () => {
     if (!window.confirm(`Are you sure you want to ${action} this product?`)) return;
     
     try {
-      await axios.put(`/api/admin/products/${productId}/toggle-status`, { 
+      await axios.put(`/admin/products/${productId}/toggle-status`, { 
         isActive: !currentStatus 
       });
       fetchAdminData(); // Refresh data
@@ -388,7 +388,7 @@ const AdminDashboard = () => {
     if (!window.confirm('Are you sure you want to permanently delete this product?')) return;
     
     try {
-      await axios.delete(`/api/admin/products/${productId}`);
+      await axios.delete(`/admin/products/${productId}`);
       fetchAdminData(); // Refresh data
     } catch (error) {
       console.error('Error deleting product:', error);
@@ -467,9 +467,9 @@ const AdminDashboard = () => {
       const promises = userIds.map(userId => {
         switch (action) {
           case 'approve':
-            return axios.put(`/api/admin/users/${userId}/approve`, { approved: true });
+            return axios.put(`/admin/users/${userId}/approve`, { approved: true });
           case 'deactivate':
-            return axios.delete(`/api/admin/users/${userId}`);
+            return axios.delete(`/admin/users/${userId}`);
           default:
             return Promise.resolve();
         }
@@ -489,9 +489,9 @@ const AdminDashboard = () => {
       const promises = productIds.map(productId => {
         switch (action) {
           case 'activate':
-            return axios.put(`/api/admin/products/${productId}/toggle-status`, { isActive: true });
+            return axios.put(`/admin/products/${productId}/toggle-status`, { isActive: true });
           case 'deactivate':
-            return axios.put(`/api/admin/products/${productId}/toggle-status`, { isActive: false });
+            return axios.put(`/admin/products/${productId}/toggle-status`, { isActive: false });
           default:
             return Promise.resolve();
         }

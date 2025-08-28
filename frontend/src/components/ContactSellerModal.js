@@ -242,7 +242,7 @@ const ContactSellerModal = ({ isOpen, onClose, product, user }) => {
     setError('');
 
     try {
-      await axios.post('/api/messages/start', {
+      await axios.post('/messages/start', {
         merchantId: product.merchant._id,
         productId: product._id,
         subject: formData.subject,

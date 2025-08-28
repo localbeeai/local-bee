@@ -604,7 +604,7 @@ const CustomerDashboard = () => {
   const fetchOrders = async () => {
     setOrdersLoading(true);
     try {
-      const response = await axios.get('/api/orders/customer');
+      const response = await axios.get('/orders/customer');
       setOrders(response.data);
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -617,7 +617,7 @@ const CustomerDashboard = () => {
   const fetchFavorites = async () => {
     setFavoritesLoading(true);
     try {
-      const response = await axios.get('/api/users/favorites');
+      const response = await axios.get('/users/favorites');
       setFavorites(response.data);
     } catch (error) {
       console.error('Error fetching favorites:', error);
@@ -629,7 +629,7 @@ const CustomerDashboard = () => {
 
   const addToFavorites = async (productId) => {
     try {
-      await axios.post('/api/users/favorites', { productId });
+      await axios.post('/users/favorites', { productId });
       fetchFavorites(); // Refresh the favorites list
     } catch (error) {
       console.error('Error adding to favorites:', error);
@@ -639,7 +639,7 @@ const CustomerDashboard = () => {
 
   const removeFromFavorites = async (productId) => {
     try {
-      await axios.delete(`/api/users/favorites/${productId}`);
+      await axios.delete(`/users/favorites/${productId}`);
       fetchFavorites(); // Refresh the favorites list
     } catch (error) {
       console.error('Error removing from favorites:', error);
