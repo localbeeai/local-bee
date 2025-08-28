@@ -409,7 +409,7 @@ const Pagination = styled.div`
 
 const Products = () => {
   const { user } = useAuth();
-  const { getLocationParams, hasLocation, getLocationString, promptLocationSetup, setLocation } = useLocation();
+  const { getLocationParams, hasLocation, getLocationString, promptLocationSetup, setLocation, userLocation } = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -463,13 +463,13 @@ const Products = () => {
   // Handle zip code from URL parameters
   useEffect(() => {
     const zipParam = searchParams.get('zip');
-    if (zipParam) {
-      // Always set location from URL parameter when zip is provided
+    if (zipParam && zipParam !== userLocation?.zipCode) {
+      // Only set location if it's different from current location
       setLocation(zipParam).catch(error => {
         console.error('Failed to set location from URL zip:', error);
       });
     }
-  }, [searchParams, setLocation]);
+  }, [searchParams, userLocation?.zipCode, setLocation]); // Added back with zipCode check to prevent loop
 
   const fetchProducts = async (page = 1) => {
     setLoading(true);

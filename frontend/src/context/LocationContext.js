@@ -72,9 +72,6 @@ export const LocationProvider = ({ children }) => {
         await locationService.setUserZipCode(locationData.zipCode);
       }
       
-      // Fetch nearby merchants for this location
-      await updateNearbyMerchants(locationData);
-      
       setShowLocationSetup(false);
       
       // Navigate to products page if on home page
@@ -125,9 +122,9 @@ export const LocationProvider = ({ children }) => {
     if (userLocation) {
       const updatedLocation = { ...userLocation, radius: newRadius };
       setUserLocation(updatedLocation);
-      await updateNearbyMerchants(updatedLocation);
+      // Products page will automatically refetch when userLocation changes
     }
-  }, [userLocation, updateNearbyMerchants]);
+  }, [userLocation]);
 
   // Get location-based product filter params
   const getLocationParams = useCallback(() => {
@@ -167,7 +164,6 @@ export const LocationProvider = ({ children }) => {
       const locationData = await locationService.setUserZipCode(zipCode);
       if (locationData) {
         setUserLocation(locationData);
-        await updateNearbyMerchants(locationData);
         return locationData;
       } else {
         throw new Error('Invalid zip code');
@@ -178,7 +174,7 @@ export const LocationProvider = ({ children }) => {
     } finally {
       setLocationLoading(false);
     }
-  }, [updateNearbyMerchants]);
+  }, []);
 
   const value = {
     // State
