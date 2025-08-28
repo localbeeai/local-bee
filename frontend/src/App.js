@@ -49,8 +49,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <CartProvider>
-          <LocationProvider>
             <Router>
+          <LocationProvider>
             <div className="App">
               <ScrollToTop />
               <Header />
@@ -129,8 +129,8 @@ function App() {
             </main>
               <Footer />
             </div>
-            </Router>
           </LocationProvider>
+            </Router>
         </CartProvider>
       </AuthProvider>
     </QueryClientProvider>
